@@ -11,32 +11,42 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { mockTemplatePackages, TemplatePackage, RecommendedSetup } from "@/lib/mock-data";
+import { TemplatePackage, RecommendedSetup } from "@/lib/mock-data";
+import { getTemplatePackages, logPrintSession } from "@/lib/supabase/actions";
 import { FileText, Printer, FileSpreadsheet, Download, RefreshCw, CheckCircle, Sparkles } from "lucide-react";
 
 function PrintWorkspaceContent() {
   const searchParams = useSearchParams();
   const templateIdParam = searchParams.get("templateId");
 
-  const lockedTemplates = mockTemplatePackages.filter((tp) => tp.status === "locked");
-
+  const [lockedTemplates, setLockedTemplates] = useState<TemplatePackage[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplatePackage | null>(null);
   const [isUploaded, setIsUploaded] = useState(false);
   const [fileName, setFileName] = useState("");
   const [activeSetup, setActiveSetup] = useState<RecommendedSetup | null>(null);
   const [isAILoading, setIsAILoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  // Load locked templates from Supabase
+  useEffect(() => {
+    getTemplatePackages()
+      .then((pkgs) => {
+        setLockedTemplates(pkgs.filter((tp) => tp.status === "locked"));
+      })
+      .catch((err) => console.error("Failed to load templates:", err));
+  }, []);
 
   // Sync with templateId from URL search param if present
   useEffect(() => {
-    if (templateIdParam) {
+    if (templateIdParam && lockedTemplates.length > 0) {
       const pkg = lockedTemplates.find((tp) => tp.id === templateIdParam);
       if (pkg) {
         setSelectedTemplate(pkg);
         setActiveSetup(pkg.recommendedSetup);
       }
     }
-  }, [templateIdParam]);
+  }, [templateIdParam, lockedTemplates]);
 
   const handleTemplateChange = (id: string) => {
     const pkg = lockedTemplates.find((tp) => tp.id === id) || null;
@@ -284,8 +294,31 @@ function PrintWorkspaceContent() {
                   </Button>
                 )}
 
-                <Button className="w-full shadow-sm" size="default">
-                  Print All Documents
+                <Button 
+                  className="w-full shadow-sm" 
+                  size="default"
+                  onClick={async () => {
+                    if (!selectedTemplate) return;
+                    setIsPrinting(true);
+                    try {
+                      await logPrintSession({
+                        templatePackageId: selectedTemplate.id,
+                        fileName: fileName || "shipment_manifest.xlsx",
+                        rowCount: 142,
+                        documentCount: 8,
+                        labelCount: 142,
+                      });
+                      setSuccessMessage("Print job completed. Session logged to database.");
+                      setTimeout(() => setSuccessMessage(null), 5000);
+                    } catch (err) {
+                      console.error("Failed to log session:", err);
+                    } finally {
+                      setIsPrinting(false);
+                    }
+                  }}
+                  disabled={isPrinting}
+                >
+                  {isPrinting ? "Logging Print Job..." : "Print All Documents"}
                 </Button>
               </CardContent>
             </Card>

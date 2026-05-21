@@ -1,12 +1,10 @@
-"use client";
-
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
 import { TemplatePackageCard } from "@/components/template-package-card";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { mockTemplatePackages, mockStats } from "@/lib/mock-data";
+import { getTemplatePackages, getStats } from "@/lib/supabase/actions";
 import { 
   Printer, 
   FilePlus2, 
@@ -17,11 +15,11 @@ import {
   TrendingUp
 } from "lucide-react";
 
-export default function DashboardPage() {
-  // Grab the 3 most recently updated packages for display
-  const recentPackages = [...mockTemplatePackages]
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .slice(0, 3);
+export default async function DashboardPage() {
+  // Fetch stats and packages dynamically from Supabase
+  const stats = await getStats().catch(() => ({ lockedCount: 0, draftCount: 0, totalPrintSessions: 0 }));
+  const allPackages = await getTemplatePackages().catch(() => []);
+  const recentPackages = allPackages.slice(0, 3);
 
   return (
     <AppShell>
@@ -81,7 +79,7 @@ export default function DashboardPage() {
             <Lock className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            <div className="text-2xl font-black text-foreground">{mockStats.lockedCount}</div>
+            <div className="text-2xl font-black text-foreground">{stats.lockedCount}</div>
             <p className="text-[10px] text-muted-foreground mt-0.5">Ready for direct printing</p>
           </CardContent>
         </Card>
@@ -92,7 +90,7 @@ export default function DashboardPage() {
             <FileSignature className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            <div className="text-2xl font-black text-foreground">{mockStats.draftCount}</div>
+            <div className="text-2xl font-black text-foreground">{stats.draftCount}</div>
             <p className="text-[10px] text-muted-foreground mt-0.5">Awaiting layout adjustments</p>
           </CardContent>
         </Card>
@@ -103,7 +101,7 @@ export default function DashboardPage() {
             <History className="h-4 w-4 text-foreground/70" />
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            <div className="text-2xl font-black text-foreground">{mockStats.totalPrintSessions}</div>
+            <div className="text-2xl font-black text-foreground">{stats.totalPrintSessions}</div>
             <p className="text-[10px] text-muted-foreground mt-0.5">Generated in current session</p>
           </CardContent>
         </Card>

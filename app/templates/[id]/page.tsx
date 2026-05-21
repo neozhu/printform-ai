@@ -6,7 +6,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { mockTemplatePackages } from "@/lib/mock-data";
+import { getTemplatePackageById } from "@/lib/supabase/actions";
 import { 
   ArrowLeft, 
   Printer, 
@@ -22,7 +22,7 @@ import {
 
 export default async function TemplateDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const pkg = mockTemplatePackages.find((tp) => tp.id === id);
+  const pkg = await getTemplatePackageById(id).catch(() => null);
 
   if (!pkg) {
     notFound();

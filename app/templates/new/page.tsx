@@ -13,7 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { mockTemplatePackages, RecommendedSetup } from "@/lib/mock-data";
+import { RecommendedSetup } from "@/lib/mock-data";
+import { 
+  getTemplatePackageById, 
+  createTemplatePackage, 
+  updateTemplatePackage, 
+  lockTemplatePackage 
+} from "@/lib/supabase/actions";
 import { Check, ArrowLeft, Info, HelpCircle, Lock } from "lucide-react";
 
 function SetupStudioContent() {
@@ -23,12 +29,13 @@ function SetupStudioContent() {
 
   const [customer, setCustomer] = useState("");
   const [packageName, setPackageName] = useState("");
-  const [outputs, setOutputs] = useState<string[]>(["Delivery Note", "Label"]);
+  const [outputs, setOutputs] = useState<("Delivery Note" | "Label")[]>(["Delivery Note", "Label"]);
   const [isExcelUploaded, setIsExcelUploaded] = useState(false);
   const [isDNUploaded, setIsDNUploaded] = useState(false);
   const [isLabelUploaded, setIsLabelUploaded] = useState(false);
 
   const [isAILoading, setIsAILoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
 
   const [setup, setSetup] = useState<RecommendedSetup>({
@@ -42,20 +49,23 @@ function SetupStudioContent() {
   // Pre-populate if editing an existing draft
   useEffect(() => {
     if (draftIdParam) {
-      const pkg = mockTemplatePackages.find((tp) => tp.id === draftIdParam);
-      if (pkg) {
-        setCustomer(pkg.customerName);
-        setPackageName(pkg.packageName);
-        setOutputs(pkg.outputs);
-        setSetup(pkg.recommendedSetup);
-        setIsExcelUploaded(true);
-        if (pkg.outputs.includes("Delivery Note")) setIsDNUploaded(true);
-        if (pkg.outputs.includes("Label")) setIsLabelUploaded(true);
-      }
+      getTemplatePackageById(draftIdParam)
+        .then((pkg) => {
+          if (pkg) {
+            setCustomer(pkg.customerName);
+            setPackageName(pkg.packageName);
+            setOutputs(pkg.outputs);
+            setSetup(pkg.recommendedSetup);
+            setIsExcelUploaded(true);
+            if (pkg.outputs.includes("Delivery Note")) setIsDNUploaded(true);
+            if (pkg.outputs.includes("Label")) setIsLabelUploaded(true);
+          }
+        })
+        .catch((err) => console.error("Failed to load draft:", err));
     }
   }, [draftIdParam]);
 
-  const handleOutputToggle = (type: string) => {
+  const handleOutputToggle = (type: "Delivery Note" | "Label") => {
     setOutputs((prev) =>
       prev.includes(type) ? prev.filter((o) => o !== type) : [...prev, type]
     );
@@ -90,12 +100,78 @@ function SetupStudioContent() {
     }
   };
 
-  const handleLockTemplate = () => {
+  const handleSaveDraft = async () => {
+    if (!customer.trim() || !packageName.trim()) {
+      alert("Please fill in Customer and Package Name before saving draft.");
+      return;
+    }
+    setIsSaving(true);
+    try {
+      if (draftIdParam) {
+        // Update existing draft
+        await updateTemplatePackage(draftIdParam, {
+          customerName: customer,
+          packageName: packageName,
+          outputs: outputs,
+          recommendedSetup: setup,
+        });
+        alert("Draft saved successfully.");
+      } else {
+        // Create new draft
+        const newPkg = await createTemplatePackage({
+          customerName: customer,
+          packageName: packageName,
+          outputs: outputs,
+          recommendedSetup: setup,
+        });
+        // Redirect to edit url with new ID to prevent duplicate creations
+        router.replace(`/templates/new?id=${newPkg.id}`);
+        alert("Draft saved successfully.");
+      }
+    } catch (err) {
+      console.error("Failed to save draft:", err);
+      alert("Failed to save draft.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleLockTemplate = async () => {
     if (!customer.trim() || !packageName.trim()) {
       alert("Please fill in Customer and Package Name before confirming.");
       return;
     }
-    setShowSuccessOverlay(true);
+    setIsSaving(true);
+    try {
+      let pkgId = draftIdParam;
+      if (pkgId) {
+        // Update existing
+        await updateTemplatePackage(pkgId, {
+          customerName: customer,
+          packageName: packageName,
+          outputs: outputs,
+          recommendedSetup: setup,
+        });
+      } else {
+        // Create new
+        const newPkg = await createTemplatePackage({
+          customerName: customer,
+          packageName: packageName,
+          outputs: outputs,
+          recommendedSetup: setup,
+        });
+        pkgId = newPkg.id;
+      }
+      
+      // Lock it
+      await lockTemplatePackage(pkgId);
+      setShowSuccessOverlay(true);
+    } catch (err) {
+      console.error("Failed to lock template:", err);
+      alert("Failed to lock template.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -230,12 +306,23 @@ function SetupStudioContent() {
 
           <AICorrectionBox onSubmit={handleAICorrection} isLoading={isAILoading} />
 
-          <Button 
-            onClick={handleLockTemplate}
-            className="w-full shadow-sm py-5 h-auto text-sm"
-          >
-            Confirm & Lock Template
-          </Button>
+          <div className="flex flex-col gap-2">
+            <Button
+              onClick={handleSaveDraft}
+              variant="outline"
+              className="w-full shadow-sm py-5 h-auto text-sm border-dashed"
+              disabled={isSaving}
+            >
+              {isSaving ? "Saving Draft..." : "Save Draft"}
+            </Button>
+            <Button 
+              onClick={handleLockTemplate}
+              className="w-full shadow-sm py-5 h-auto text-sm"
+              disabled={isSaving}
+            >
+              {isSaving ? "Locking..." : "Confirm & Lock Template"}
+            </Button>
+          </div>
         </div>
 
       </div>
