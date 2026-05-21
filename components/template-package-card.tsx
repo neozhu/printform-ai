@@ -26,16 +26,22 @@ export function TemplatePackageCard({ pkg }: TemplatePackageCardProps) {
       </CardHeader>
       <CardContent className="pt-4 space-y-3">
         <div className="flex gap-2">
-          {pkg.outputs.includes("Delivery Note") && (
+          {pkg.outputs.includes("A4 Portrait") && (
             <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-800/30">
               <FileText className="h-3 w-3" />
-              Delivery Note
+              A4 Portrait
             </span>
           )}
-          {pkg.outputs.includes("Label") && (
+          {pkg.outputs.includes("A4 Landscape") && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-800/30">
+              <FileText className="h-3 w-3" />
+              A4 Landscape
+            </span>
+          )}
+          {pkg.outputs.includes("Custom Size") && (
             <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-100 dark:bg-purple-950/20 dark:text-purple-400 dark:border-purple-800/30">
               <Printer className="h-3 w-3" />
-              Label
+              Custom Size
             </span>
           )}
         </div>

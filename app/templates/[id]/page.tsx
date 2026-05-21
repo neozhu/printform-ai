@@ -70,19 +70,19 @@ export default async function TemplateDetailPage({ params }: { params: Promise<{
             
             <CardContent className="p-6">
               <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
-                Included Output Formats
+                Configured Output Format
               </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
-                {/* Delivery Note sub-template */}
-                {pkg.outputs.includes("Delivery Note") ? (
-                  <Card className="border-border shadow-sm">
+              <div className="w-full">
+                {!pkg.outputs.includes("Custom Size") ? (
+                  <Card className="border-border shadow-sm max-w-xl">
                     <CardHeader className="pb-2 flex flex-row items-center gap-2 space-y-0">
                       <div className="w-8 h-8 rounded bg-blue-50 text-blue-700 flex items-center justify-center dark:bg-blue-950/20 dark:text-blue-400">
                         <FileText className="h-4.5 w-4.5" />
                       </div>
                       <div>
-                        <CardTitle className="text-sm font-bold">A4 Delivery Note</CardTitle>
+                        <CardTitle className="text-sm font-bold">
+                          {pkg.outputs.includes("A4 Landscape") ? "A4 Landscape Document" : "A4 Portrait Document"}
+                        </CardTitle>
                         <span className="text-[10px] text-muted-foreground font-medium">Locked layout spec</span>
                       </div>
                     </CardHeader>
@@ -110,27 +110,23 @@ export default async function TemplateDetailPage({ params }: { params: Promise<{
                     </CardContent>
                   </Card>
                 ) : (
-                  <Card className="border-border border-dashed shadow-sm flex items-center justify-center p-6 bg-muted/5 min-h-[140px]">
-                    <div className="text-center text-muted-foreground">
-                      <FileText className="h-6 w-6 mx-auto opacity-30 mb-2" />
-                      <p className="text-xs font-semibold">No Delivery Note Output</p>
-                    </div>
-                  </Card>
-                )}
-
-                {/* Label sub-template */}
-                {pkg.outputs.includes("Label") ? (
-                  <Card className="border-border shadow-sm">
+                  <Card className="border-border shadow-sm max-w-xl">
                     <CardHeader className="pb-2 flex flex-row items-center gap-2 space-y-0">
-                      <div className="w-8 h-8 rounded bg-purple-50 text-purple-700 flex items-center justify-center dark:bg-purple-950/20 dark:text-purple-400">
+                       <div className="w-8 h-8 rounded bg-purple-50 text-purple-700 flex items-center justify-center dark:bg-purple-950/20 dark:text-purple-400">
                         <Barcode className="h-4.5 w-4.5" />
                       </div>
                       <div>
-                        <CardTitle className="text-sm font-bold">80x80 Barcode Label</CardTitle>
+                        <CardTitle className="text-sm font-bold">Custom Barcode Label</CardTitle>
                         <span className="text-[10px] text-muted-foreground font-medium">Locked layout spec</span>
                       </div>
                     </CardHeader>
                     <CardContent className="pt-2 space-y-2 text-xs text-foreground/90">
+                      {setup.customWidth && setup.customHeight && (
+                        <div className="flex justify-between py-1 border-b border-border/60">
+                          <span className="text-muted-foreground font-medium">Label Size:</span>
+                          <span className="font-semibold">{setup.customWidth} mm x {setup.customHeight} mm</span>
+                        </div>
+                      )}
                       <div className="flex justify-between py-1 border-b border-border/60">
                         <span className="text-muted-foreground font-medium">Quantity Rule:</span>
                         <span className="font-semibold">{setup.labelQuantityRule}</span>
@@ -141,15 +137,7 @@ export default async function TemplateDetailPage({ params }: { params: Promise<{
                       </div>
                     </CardContent>
                   </Card>
-                ) : (
-                  <Card className="border-border border-dashed shadow-sm flex items-center justify-center p-6 bg-muted/5 min-h-[140px]">
-                    <div className="text-center text-muted-foreground">
-                      <Barcode className="h-6 w-6 mx-auto opacity-30 mb-2" />
-                      <p className="text-xs font-semibold">No Barcode Label Output</p>
-                    </div>
-                  </Card>
                 )}
-
               </div>
             </CardContent>
           </Card>

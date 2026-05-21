@@ -6,13 +6,15 @@ export interface RecommendedSetup {
   lineRule: string;
   labelQuantityRule: string;
   barcodeContent: string;
+  customWidth?: number;
+  customHeight?: number;
 }
 
 export interface TemplatePackage {
   id: string;
   customerName: string;
   packageName: string;
-  outputs: ("Delivery Note" | "Label")[];
+  outputs: ("A4 Portrait" | "A4 Landscape" | "Custom Size")[];
   status: TemplateStatus;
   version: string;
   updatedAt: string;
@@ -36,7 +38,7 @@ export const mockTemplatePackages: TemplatePackage[] = [
     id: "tp-1",
     customerName: "Tesla Motors",
     packageName: "Standard Parts Labeling",
-    outputs: ["Delivery Note", "Label"],
+    outputs: ["A4 Portrait"],
     status: "locked",
     version: "v1.2",
     updatedAt: "2026-05-18T14:30:00Z",
@@ -52,7 +54,7 @@ export const mockTemplatePackages: TemplatePackage[] = [
     id: "tp-2",
     customerName: "Apple Inc.",
     packageName: "Retail Packaging Flow",
-    outputs: ["Label"],
+    outputs: ["Custom Size"],
     status: "draft",
     version: "v1.0-draft",
     updatedAt: "2026-05-20T09:15:00Z",
@@ -62,13 +64,15 @@ export const mockTemplatePackages: TemplatePackage[] = [
       lineRule: "Split line items by product variant",
       labelQuantityRule: "By pallet count",
       barcodeContent: "QR Code (Order ID + Store Code)",
+      customWidth: 80,
+      customHeight: 80,
     },
   },
   {
     id: "tp-3",
     customerName: "ASML Holding",
     packageName: "Precision Tooling Delivery",
-    outputs: ["Delivery Note", "Label"],
+    outputs: ["A4 Landscape"],
     status: "locked",
     version: "v2.0",
     updatedAt: "2026-05-15T11:00:00Z",
@@ -84,7 +88,7 @@ export const mockTemplatePackages: TemplatePackage[] = [
     id: "tp-4",
     customerName: "Toyota Corp",
     packageName: "Just-In-Time Kanban",
-    outputs: ["Label"],
+    outputs: ["Custom Size"],
     status: "archived",
     version: "v1.1",
     updatedAt: "2026-04-10T16:45:00Z",
@@ -94,6 +98,8 @@ export const mockTemplatePackages: TemplatePackage[] = [
       lineRule: "Group by dock, aggregate quantity",
       labelQuantityRule: "By package count",
       barcodeContent: "Kanban Barcode",
+      customWidth: 100,
+      customHeight: 150,
     },
   },
 ];

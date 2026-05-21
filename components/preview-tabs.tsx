@@ -23,14 +23,22 @@ export function PreviewTabs({
   deliveryNoteMode,
   labelQuantityRule,
   barcodeContent,
-  outputs = ["Delivery Note", "Label"],
+  outputs = ["A4 Portrait"],
   rows,
 }: PreviewTabsProps) {
-  const showDN = outputs.includes("Delivery Note");
-  const showLabel = outputs.includes("Label");
+  const showDN = outputs.includes("A4 Portrait") || outputs.includes("A4 Landscape");
+  const showLabel = outputs.includes("Custom Size");
 
   const [activeTab, setActiveTab] = useState(showDN ? "delivery-note" : "label");
   const [zoom, setZoom] = useState(1);
+
+  React.useEffect(() => {
+    if (showDN && !showLabel) {
+      setActiveTab("delivery-note");
+    } else if (showLabel && !showDN) {
+      setActiveTab("label");
+    }
+  }, [showDN, showLabel]);
 
   const handleZoomIn = () => setZoom((z) => Math.min(z + 0.1, 1.4));
   const handleZoomOut = () => setZoom((z) => Math.max(z - 0.1, 0.6));
@@ -48,16 +56,26 @@ export function PreviewTabs({
     <div className="flex flex-col h-full bg-card border border-border rounded-xl shadow-sm overflow-hidden min-h-[500px]">
       {/* Tab bar + Zoom Controls */}
       <div className="flex items-center justify-between border-b border-border px-4 py-2 bg-muted/20">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
-          <TabsList className="grid grid-cols-2 w-[240px] h-8 p-0.5">
-            <TabsTrigger value="delivery-note" disabled={!showDN} className="text-xs py-1">
-              Delivery Note
-            </TabsTrigger>
-            <TabsTrigger value="label" disabled={!showLabel} className="text-xs py-1">
-              Label
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {outputs.length > 1 ? (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
+            <TabsList className="grid grid-cols-2 w-[240px] h-8 p-0.5">
+              <TabsTrigger value="delivery-note" disabled={!showDN} className="text-xs py-1">
+                A4 Document
+              </TabsTrigger>
+              <TabsTrigger value="label" disabled={!showLabel} className="text-xs py-1">
+                Barcode Label
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        ) : (
+          <span className="text-xs font-semibold text-foreground uppercase tracking-wider pl-1">
+            {customerName && packageName 
+              ? `${customerName} - ${packageName} PREVIEW` 
+              : (outputs.includes("Custom Size") 
+                  ? "Custom Label Preview" 
+                  : "A4 Document Preview")}
+          </span>
+        )}
 
         {/* Zoom controls */}
         <div className="flex items-center gap-1">
@@ -80,7 +98,12 @@ export function PreviewTabs({
       <div className="flex-1 overflow-auto p-6 bg-muted/5 flex items-start justify-center">
         <div className="w-full transition-transform duration-150">
           {activeTab === "delivery-note" && showDN && (
-            <MockDeliveryNotePreview scale={zoom} data={previewData} rows={rows} />
+            <MockDeliveryNotePreview 
+              scale={zoom} 
+              isLandscape={outputs.includes("A4 Landscape")}
+              data={previewData} 
+              rows={rows} 
+            />
           )}
           {activeTab === "label" && showLabel && (
             <MockLabelPreview scale={zoom} data={previewData} rows={rows} />

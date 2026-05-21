@@ -15,9 +15,9 @@ export function AICorrectionBox({ onSubmit, isLoading = false }: AICorrectionBox
   const [value, setValue] = useState("");
 
   const examples = [
-    "数量用交货数量",
-    "标签按托盘数生成",
-    "条码用采购合同序号加位号",
+    "Use delivery quantity for quantity",
+    "Generate labels by pallet count",
+    "Use PO number as barcode content",
   ];
 
   const handleSubmit = (e: React.FormEvent) => {

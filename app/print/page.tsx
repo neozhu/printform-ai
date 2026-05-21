@@ -476,7 +476,7 @@ function PrintWorkspaceContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-4 space-y-2.5">
-                {selectedTemplate?.outputs.includes("Delivery Note") && (
+                {(selectedTemplate?.outputs.includes("A4 Portrait") || selectedTemplate?.outputs.includes("A4 Landscape")) && (
                   <Button 
                     variant="outline" 
                     className="w-full flex justify-between items-center group/btn" 
@@ -485,13 +485,13 @@ function PrintWorkspaceContent() {
                   >
                     <span className="flex items-center gap-2">
                       <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span>Download Delivery Notes</span>
+                      <span>Download A4 Documents</span>
                     </span>
                     <Download className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover/btn:translate-y-0.5" />
                   </Button>
                 )}
 
-                {selectedTemplate?.outputs.includes("Label") && (
+                {selectedTemplate?.outputs.includes("Custom Size") && (
                   <Button 
                     variant="outline" 
                     className="w-full flex justify-between items-center group/btn" 
@@ -500,7 +500,7 @@ function PrintWorkspaceContent() {
                   >
                     <span className="flex items-center gap-2">
                       <Printer className="h-4 w-4 text-muted-foreground" />
-                      <span>Download Labels PDF</span>
+                      <span>Download Custom Labels</span>
                     </span>
                     <Download className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover/btn:translate-y-0.5" />
                   </Button>
@@ -522,10 +522,10 @@ function PrintWorkspaceContent() {
                       });
 
                       // Trigger prints for selected outputs
-                      if (selectedTemplate.outputs.includes("Delivery Note")) {
+                      if (selectedTemplate.outputs.includes("A4 Portrait") || selectedTemplate.outputs.includes("A4 Landscape")) {
                         handlePrint("Delivery Note");
                       }
-                      if (selectedTemplate.outputs.includes("Label")) {
+                      if (selectedTemplate.outputs.includes("Custom Size")) {
                         setTimeout(() => handlePrint("Label"), 400);
                       }
 
@@ -539,7 +539,11 @@ function PrintWorkspaceContent() {
                   }}
                   disabled={isPrinting}
                 >
-                  {isPrinting ? "Logging Print Job..." : "Print All Documents"}
+                  {isPrinting 
+                    ? "Logging Print Job..." 
+                    : (selectedTemplate?.outputs.includes("A4 Portrait") || selectedTemplate?.outputs.includes("A4 Landscape") 
+                        ? "Print A4 Documents" 
+                        : "Print Barcode Labels")}
                 </Button>
               </CardContent>
             </Card>

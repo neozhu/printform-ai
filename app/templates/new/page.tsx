@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RecommendedSetup } from "@/lib/mock-data";
 import { 
   getTemplatePackageById, 
@@ -29,7 +30,7 @@ function SetupStudioContent() {
 
   const [customer, setCustomer] = useState("");
   const [packageName, setPackageName] = useState("");
-  const [outputs, setOutputs] = useState<("Delivery Note" | "Label")[]>(["Delivery Note", "Label"]);
+  const [outputs, setOutputs] = useState<("A4 Portrait" | "A4 Landscape" | "Custom Size")[]>(["A4 Portrait"]);
   const [isExcelUploaded, setIsExcelUploaded] = useState(false);
   const [isDNUploaded, setIsDNUploaded] = useState(false);
   const [isLabelUploaded, setIsLabelUploaded] = useState(false);
@@ -60,18 +61,16 @@ function SetupStudioContent() {
             setOutputs(pkg.outputs);
             setSetup(pkg.recommendedSetup);
             setIsExcelUploaded(true);
-            if (pkg.outputs.includes("Delivery Note")) setIsDNUploaded(true);
-            if (pkg.outputs.includes("Label")) setIsLabelUploaded(true);
+            if (pkg.outputs.includes("A4 Portrait") || pkg.outputs.includes("A4 Landscape")) setIsDNUploaded(true);
+            if (pkg.outputs.includes("Custom Size")) setIsLabelUploaded(true);
           }
         })
         .catch((err) => console.error("Failed to load draft:", err));
     }
   }, [draftIdParam]);
 
-  const handleOutputToggle = (type: "Delivery Note" | "Label") => {
-    setOutputs((prev) =>
-      prev.includes(type) ? prev.filter((o) => o !== type) : [...prev, type]
-    );
+  const handleOutputSelect = (type: "A4 Portrait" | "A4 Landscape" | "Custom Size") => {
+    setOutputs([type]);
   };
 
   const handleSelectFix = (category: string, value: string) => {
@@ -223,30 +222,52 @@ function SetupStudioContent() {
               </div>
 
               <div className="space-y-2 pt-2 border-t border-border/80">
-                <label className="text-xs font-semibold text-muted-foreground uppercase block">Expected Outputs</label>
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="out-dn"
-                      checked={outputs.includes("Delivery Note")}
-                      onCheckedChange={() => handleOutputToggle("Delivery Note")}
+                <label className="text-xs font-semibold text-muted-foreground uppercase block">Expected Output Size</label>
+                <Select 
+                  value={outputs[0] || "A4 Portrait"} 
+                  onValueChange={(val: any) => handleOutputSelect(val)}
+                >
+                  <SelectTrigger className="w-full text-xs h-8">
+                    <SelectValue placeholder="Select output format" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="A4 Portrait" className="text-xs">A4 Portrait</SelectItem>
+                    <SelectItem value="A4 Landscape" className="text-xs">A4 Landscape</SelectItem>
+                    <SelectItem value="Custom Size" className="text-xs">Custom Size</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {outputs.includes("Custom Size") && (
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-semibold text-muted-foreground uppercase block">Width (mm)</label>
+                    <Input
+                      type="number"
+                      value={setup.customWidth || ""}
+                      onChange={(e) => {
+                        const val = e.target.value ? parseFloat(e.target.value) : undefined;
+                        setSetup(prev => ({ ...prev, customWidth: val }));
+                      }}
+                      placeholder="e.g. 80"
+                      className="text-xs h-8"
                     />
-                    <label htmlFor="out-dn" className="text-xs font-medium text-foreground cursor-pointer select-none">
-                      A4 Delivery Note Document
-                    </label>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="out-label"
-                      checked={outputs.includes("Label")}
-                      onCheckedChange={() => handleOutputToggle("Label")}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-semibold text-muted-foreground uppercase block">Height (mm)</label>
+                    <Input
+                      type="number"
+                      value={setup.customHeight || ""}
+                      onChange={(e) => {
+                        const val = e.target.value ? parseFloat(e.target.value) : undefined;
+                        setSetup(prev => ({ ...prev, customHeight: val }));
+                      }}
+                      placeholder="e.g. 80"
+                      className="text-xs h-8"
                     />
-                    <label htmlFor="out-label" className="text-xs font-medium text-foreground cursor-pointer select-none">
-                      80x80 Barcode / QR Label
-                    </label>
                   </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
@@ -279,9 +300,11 @@ function SetupStudioContent() {
                 />
               </div>
 
-              {outputs.includes("Delivery Note") && (
+              {(outputs.includes("A4 Portrait") || outputs.includes("A4 Landscape")) && (
                 <div className="space-y-1 pt-2 border-t border-border/80">
-                  <span className="text-[10px] text-muted-foreground font-bold uppercase block">Delivery Note Sample</span>
+                  <span className="text-[10px] text-muted-foreground font-bold uppercase block">
+                    {outputs.includes("A4 Portrait") ? "A4 Portrait Layout Sample" : "A4 Landscape Layout Sample"} (PDF/Image)
+                  </span>
                   <UploadDropzone
                     accept="image/*, .pdf"
                     title="Upload Target Layout"
@@ -290,9 +313,9 @@ function SetupStudioContent() {
                 </div>
               )}
 
-              {outputs.includes("Label") && (
+              {outputs.includes("Custom Size") && (
                 <div className="space-y-1 pt-2 border-t border-border/80">
-                  <span className="text-[10px] text-muted-foreground font-bold uppercase block">Label Target Layout</span>
+                  <span className="text-[10px] text-muted-foreground font-bold uppercase block">Custom Label Layout Sample (PDF/Image)</span>
                   <UploadDropzone
                     accept="image/*, .pdf"
                     title="Upload Target Label"

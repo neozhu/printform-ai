@@ -2,6 +2,7 @@ import React from "react";
 
 interface MockDeliveryNotePreviewProps {
   scale?: number;
+  isLandscape?: boolean;
   data?: {
     customer?: string;
     packageName?: string;
@@ -10,7 +11,7 @@ interface MockDeliveryNotePreviewProps {
   rows?: any[];
 }
 
-export function MockDeliveryNotePreview({ scale = 1, data, rows }: MockDeliveryNotePreviewProps) {
+export function MockDeliveryNotePreview({ scale = 1, isLandscape = false, data, rows }: MockDeliveryNotePreviewProps) {
   const customer = data?.customer || "Tesla Motors";
   const mode = data?.deliveryNoteMode || "By Delivery No.";
 
@@ -50,11 +51,11 @@ export function MockDeliveryNotePreview({ scale = 1, data, rows }: MockDeliveryN
         id="print-dn-content"
         className="bg-white text-zinc-900 border border-zinc-200 rounded-lg shadow-sm font-sans relative"
         style={{
-          width: "595px",
-          minHeight: "820px",
+          width: isLandscape ? "820px" : "595px",
+          minHeight: isLandscape ? "595px" : "820px",
           transform: `scale(${scale})`,
           transformOrigin: "top center",
-          padding: "36px",
+          padding: isLandscape ? "28px" : "36px",
           fontSize: "12px",
           lineHeight: "1.5",
         }}
