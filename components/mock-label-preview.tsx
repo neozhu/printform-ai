@@ -36,6 +36,7 @@ export function MockLabelPreview({ scale = 1, data, rows }: MockLabelPreviewProp
   return (
     <div className="w-full flex justify-center py-4 bg-muted/20 border border-border rounded-xl overflow-hidden">
       <div
+        id="print-lbl-content"
         className="bg-white text-zinc-900 border border-zinc-200 rounded-lg shadow-sm font-sans relative"
         style={{
           width: "300px",

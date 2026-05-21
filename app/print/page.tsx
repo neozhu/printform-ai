@@ -31,6 +31,89 @@ function PrintWorkspaceContent() {
   const [parsedColumns, setParsedColumns] = useState<string[]>([]);
   const [parsedRows, setParsedRows] = useState<any[]>([]);
 
+  const handlePrint = (type: "Delivery Note" | "Label") => {
+    const selector = type === "Delivery Note" ? "#print-dn-content" : "#print-lbl-content";
+    const element = document.querySelector(selector);
+    if (!element) {
+      alert(`Please ensure the "${type}" preview is visible in the center canvas first.`);
+      return;
+    }
+    
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      alert("Popup blocker prevented opening the print page. Please allow popups for this site.");
+      return;
+    }
+    
+    const contentHtml = element.innerHTML;
+    const elementStyle = element.getAttribute("style") || "";
+    const cleanedStyle = elementStyle
+      .replace(/transform:\s*scale\([^)]+\);?/g, "")
+      .replace(/transform-origin:\s*[^;]+;?/g, "");
+    
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>${type} - PrintForm AI</title>
+          <style>
+            @media print {
+              @page {
+                size: ${type === "Delivery Note" ? "A4 portrait" : "80mm 80mm"};
+                margin: 0;
+              }
+              body {
+                margin: 0;
+                padding: 0;
+                background: white;
+              }
+            }
+            body {
+              margin: 0;
+              padding: 20px;
+              display: flex;
+              justify-content: center;
+              background: #f4f4f5;
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            }
+            .print-container {
+              background: white;
+              box-sizing: border-box;
+              box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+              border: 1px solid #e4e4e7;
+              border-radius: 8px;
+              position: relative;
+            }
+            @media print {
+              body {
+                background: white;
+                padding: 0;
+              }
+              .print-container {
+                box-shadow: none;
+                border: none;
+                border-radius: 0;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-container" style="${cleanedStyle}">
+            ${contentHtml}
+          </div>
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+                window.close();
+              }, 250);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const getGroupKey = () => {
     if (!activeSetup || parsedRows.length === 0) return null;
     
@@ -394,7 +477,12 @@ function PrintWorkspaceContent() {
               </CardHeader>
               <CardContent className="pt-4 space-y-2.5">
                 {selectedTemplate?.outputs.includes("Delivery Note") && (
-                  <Button variant="outline" className="w-full flex justify-between items-center group/btn" size="default">
+                  <Button 
+                    variant="outline" 
+                    className="w-full flex justify-between items-center group/btn" 
+                    size="default"
+                    onClick={() => handlePrint("Delivery Note")}
+                  >
                     <span className="flex items-center gap-2">
                       <FileText className="h-4 w-4 text-muted-foreground" />
                       <span>Download Delivery Notes</span>
@@ -404,7 +492,12 @@ function PrintWorkspaceContent() {
                 )}
 
                 {selectedTemplate?.outputs.includes("Label") && (
-                  <Button variant="outline" className="w-full flex justify-between items-center group/btn" size="default">
+                  <Button 
+                    variant="outline" 
+                    className="w-full flex justify-between items-center group/btn" 
+                    size="default"
+                    onClick={() => handlePrint("Label")}
+                  >
                     <span className="flex items-center gap-2">
                       <Printer className="h-4 w-4 text-muted-foreground" />
                       <span>Download Labels PDF</span>
@@ -427,6 +520,15 @@ function PrintWorkspaceContent() {
                         documentCount: docCount,
                         labelCount: labelCount,
                       });
+
+                      // Trigger prints for selected outputs
+                      if (selectedTemplate.outputs.includes("Delivery Note")) {
+                        handlePrint("Delivery Note");
+                      }
+                      if (selectedTemplate.outputs.includes("Label")) {
+                        setTimeout(() => handlePrint("Label"), 400);
+                      }
+
                       setSuccessMessage("Print job completed. Session logged to database.");
                       setTimeout(() => setSuccessMessage(null), 5000);
                     } catch (err) {

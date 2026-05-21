@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { getTemplatePackageById } from "@/lib/supabase/actions";
+import { TemplateDetailActions } from "@/components/template-detail-actions";
 import { 
   ArrowLeft, 
   Printer, 
@@ -164,36 +165,8 @@ export default async function TemplateDetailPage({ params }: { params: Promise<{
                 Actions
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-4 space-y-2">
-              {pkg.status === "locked" ? (
-                <Button className="w-full shadow-sm" asChild>
-                  <Link href={`/print?templateId=${pkg.id}`} className="flex items-center justify-center gap-1.5">
-                    <Printer className="h-4 w-4" />
-                    <span>Use for Printing</span>
-                  </Link>
-                </Button>
-              ) : (
-                <Button className="w-full shadow-sm" asChild>
-                  <Link href={`/templates/new?id=${pkg.id}`} className="flex items-center justify-center gap-1.5">
-                    <FileEdit className="h-4 w-4" />
-                    <span>Edit Draft</span>
-                  </Link>
-                </Button>
-              )}
-
-              {pkg.status === "locked" && (
-                <Button variant="outline" className="w-full flex items-center justify-center gap-1.5 hover:bg-muted" disabled>
-                  <History className="h-4 w-4 text-muted-foreground" />
-                  <span>Create New Version</span>
-                </Button>
-              )}
-
-              {pkg.status !== "archived" && (
-                <Button variant="outline" className="w-full flex items-center justify-center gap-1.5 text-destructive border-destructive/20 hover:bg-destructive/10 dark:text-red-400 dark:border-red-950/40 dark:hover:bg-red-950/20" disabled>
-                  <Archive className="h-4 w-4" />
-                  <span>Archive Template</span>
-                </Button>
-              )}
+            <CardContent className="pt-4">
+              <TemplateDetailActions pkg={pkg} />
             </CardContent>
           </Card>
 

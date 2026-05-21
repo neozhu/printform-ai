@@ -356,6 +356,7 @@ function SetupStudioContent() {
             labelQuantityRule={setup.labelQuantityRule}
             barcodeContent={setup.barcodeContent}
             outputs={outputs}
+            rows={excelRows}
           />
         </div>
 

@@ -280,3 +280,42 @@ export async function getStats() {
     totalPrintSessions: sessionCount || 0,
   };
 }
+
+/**
+ * Clone an existing template package into a new draft package.
+ */
+export async function cloneTemplatePackageAsDraft(id: string): Promise<TemplatePackage> {
+  const existing = await getTemplatePackageById(id);
+  if (!existing) throw new Error("Template package not found");
+  
+  const supabase = createSupabaseServerClient();
+  const nextVer = `${existing.version}-draft`;
+  
+  const { data: inserted, error } = await supabase
+    .from("template_packages")
+    .insert({
+      customer_name: existing.customerName,
+      package_name: existing.packageName,
+      outputs: existing.outputs,
+      status: "draft",
+      version: nextVer,
+      recommended_setup: existing.recommendedSetup,
+      updated_at: new Date().toISOString(),
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    console.error("Error in cloneTemplatePackageAsDraft:", error);
+    throw new Error(error.message);
+  }
+
+  return mapDbToTemplatePackage(inserted);
+}
+
+/**
+ * Archive a template package by changing its status to 'archived'.
+ */
+export async function archiveTemplatePackage(id: string): Promise<TemplatePackage> {
+  return updateTemplatePackage(id, { status: "archived" });
+}

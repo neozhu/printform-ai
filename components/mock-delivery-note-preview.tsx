@@ -47,6 +47,7 @@ export function MockDeliveryNotePreview({ scale = 1, data, rows }: MockDeliveryN
   return (
     <div className="w-full flex justify-center py-4 bg-muted/20 border border-border rounded-xl overflow-hidden">
       <div 
+        id="print-dn-content"
         className="bg-white text-zinc-900 border border-zinc-200 rounded-lg shadow-sm font-sans relative"
         style={{
           width: "595px",
