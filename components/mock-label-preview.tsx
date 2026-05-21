@@ -9,9 +9,17 @@ interface MockLabelPreviewProps {
     labelQuantityRule?: string;
   };
   rows?: any[];
+  layoutImage?: string;
+  layoutMappings?: any;
 }
 
-export function MockLabelPreview({ scale = 1, data, rows }: MockLabelPreviewProps) {
+export function MockLabelPreview({
+  scale = 1,
+  data,
+  rows,
+  layoutImage,
+  layoutMappings,
+}: MockLabelPreviewProps) {
   const customer = data?.customer || "Tesla Motors";
   const barcodeType = data?.barcodeContent || "Code128";
   const qtyRule = data?.labelQuantityRule || "One label per row";
@@ -33,16 +41,108 @@ export function MockLabelPreview({ scale = 1, data, rows }: MockLabelPreviewProp
   const qty = firstRow ? `${qtyVal} ${qtyUnit}` : "1,200 PCS";
   const poNumber = firstRow && poKey ? String(firstRow[poKey] || "").trim() : "PO-88319-A";
 
+  if (layoutMappings?.htmlTemplate) {
+    // Generate Barcode HTML
+    let barcodeHtml = "";
+    if (barcodeType === "QR Code") {
+      barcodeHtml = `
+        <div style="width: 64px; height: 64px; border: 1px solid #18181b; padding: 2px; background-color: white; display: flex; flex-direction: column; justify-content: space-between; align-items: stretch; box-sizing: border-box; margin: 0 auto;">
+          <div style="display: flex; justify-content: space-between; height: 33%;">
+            <div style="width: 33%; background-color: black; border: 2px solid white;"></div>
+            <div style="width: 33%; background-color: black; border: 2px solid white;"></div>
+          </div>
+          <div style="display: flex; justify-content: center; flex: 1; margin: 2px 0;">
+            <div style="width: 50%; background-color: #18181b; display: flex; flex-direction: column; justify-content: space-around; padding: 2px;">
+              <div style="height: 2px; background-color: white;"></div>
+              <div style="height: 2px; background-color: white;"></div>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; height: 33%;">
+            <div style="width: 33%; background-color: black; border: 2px solid white;"></div>
+            <div style="width: 33%; background-color: rgba(0,0,0,0.4); border: 2px solid white;"></div>
+          </div>
+        </div>
+      `;
+    } else {
+      barcodeHtml = `
+        <div style="width: 100%; display: flex; flex-direction: column; align-items: center; margin: 0 auto;">
+          <div style="width: 192px; height: 36px; background-color: #18181b; display: flex; flex-direction: column; align-items: stretch; justify-content: center; padding: 2px; border-radius: 4px; box-sizing: border-box; overflow: hidden;">
+            <div style="height: 100%; background-color: white; display: flex; align-items: center; justify-content: space-around;">
+              ${Array.from({ length: 30 }).map((_, i) => `
+                <div style="height: 100%; background-color: black; width: ${(i % 4 === 0 ? 3 : i % 2 === 0 ? 1 : 2)}px;"></div>
+              `).join('')}
+            </div>
+          </div>
+          <span style="font-size: 8px; color: #71717a; font-family: monospace; margin-top: 4px;">*${partNumber}*</span>
+        </div>
+      `;
+    }
+
+    // Replace placeholders in htmlTemplate
+    let renderedHtml = layoutMappings.htmlTemplate;
+
+    // Replace dynamic Excel columns in the htmlTemplate from the first item row if available
+    if (firstRow) {
+      Object.keys(firstRow).forEach((colName) => {
+        const val = String(firstRow[colName] ?? "");
+        const regex = new RegExp(`\\{\\{\\s*${colName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*\\}\\}`, 'gi');
+        renderedHtml = renderedHtml.replace(regex, val);
+      });
+    }
+
+    renderedHtml = renderedHtml
+      .replace(/\{\{Barcode\}\}/gi, barcodeHtml)
+      .replace(/\{\{Customer\}\}/gi, customer)
+      .replace(/\{\{Customer Name\}\}/gi, customer)
+      .replace(/\{\{PartNumber\}\}/gi, partNumber)
+      .replace(/\{\{Part Number\}\}/gi, partNumber)
+      .replace(/\{\{part\}\}/gi, partNumber)
+      .replace(/\{\{Description\}\}/gi, description)
+      .replace(/\{\{desc\}\}/gi, description)
+      .replace(/\{\{Qty\}\}/gi, qty)
+      .replace(/\{\{qty\}\}/gi, qty)
+      .replace(/\{\{Quantity\}\}/gi, qty)
+      .replace(/\{\{PONumber\}\}/gi, poNumber)
+      .replace(/\{\{PO Number\}\}/gi, poNumber);
+
+    const transformStyle = scale && scale !== 1 ? {
+      transform: `scale(${scale})`,
+      transformOrigin: "top center" as const,
+    } : {};
+
+    return (
+      <div className="min-w-full w-fit flex justify-center py-4 bg-muted/20 border border-border rounded-xl">
+        <div
+          id="print-lbl-content"
+          className="bg-white text-zinc-900 border border-zinc-200 rounded-lg shadow-sm font-sans relative"
+          style={{
+            width: "300px",
+            height: "300px",
+            ...transformStyle,
+            padding: 0,
+            boxSizing: "border-box",
+            overflow: "hidden"
+          }}
+          dangerouslySetInnerHTML={{ __html: renderedHtml }}
+        />
+      </div>
+    );
+  }
+
+  const transformStyle = scale && scale !== 1 ? {
+    transform: `scale(${scale})`,
+    transformOrigin: "top center" as const,
+  } : {};
+
   return (
-    <div className="w-full flex justify-center py-4 bg-muted/20 border border-border rounded-xl overflow-hidden">
+    <div className="min-w-full w-fit flex justify-center py-4 bg-muted/20 border border-border rounded-xl">
       <div
         id="print-lbl-content"
         className="bg-white text-zinc-900 border border-zinc-200 rounded-lg shadow-sm font-sans relative"
         style={{
           width: "300px",
           height: "300px",
-          transform: `scale(${scale})`,
-          transformOrigin: "top center",
+          ...transformStyle,
           padding: "20px",
           fontSize: "11px",
           lineHeight: "1.4",

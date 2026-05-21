@@ -65,6 +65,12 @@ function PrintWorkspaceContent() {
                 margin: 0;
                 padding: 0;
                 background: white;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+              * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
               }
             }
             body {
@@ -92,6 +98,10 @@ function PrintWorkspaceContent() {
                 box-shadow: none;
                 border: none;
                 border-radius: 0;
+                width: 100% !important;
+                height: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
               }
             }
           </style>
@@ -464,6 +474,8 @@ function PrintWorkspaceContent() {
               barcodeContent={activeSetup?.barcodeContent}
               outputs={selectedTemplate?.outputs}
               rows={parsedRows}
+              layoutImage={activeSetup?.layoutImage}
+              layoutMappings={activeSetup?.layoutMappings}
             />
           </div>
 

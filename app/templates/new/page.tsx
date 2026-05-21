@@ -21,7 +21,7 @@ import {
   updateTemplatePackage, 
   lockTemplatePackage 
 } from "@/lib/supabase/actions";
-import { Check, ArrowLeft, Info, HelpCircle, Lock } from "lucide-react";
+import { ArrowLeft, Info, HelpCircle, Lock } from "lucide-react";
 
 function SetupStudioContent() {
   const searchParams = useSearchParams();
@@ -41,6 +41,56 @@ function SetupStudioContent() {
   const [isAILoading, setIsAILoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
+  const [isAnalyzingLayout, setIsAnalyzingLayout] = useState(false);
+
+  const handleLayoutUpload = async (fileName: string, fileDataUrl?: string) => {
+    if (!fileDataUrl) return;
+    setIsAnalyzingLayout(true);
+    try {
+      const res = await fetch("/api/ai/analyze-layout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          layoutImage: fileDataUrl,
+          excelColumns,
+          outputType: outputs[0],
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const headerFieldsFromMapping = data.mappings?.headerFields
+          ? data.mappings.headerFields.map((f: any) => f.col).filter(Boolean)
+          : [];
+
+        setSetup((prev) => {
+          const newFields = [...prev.headerFields];
+          headerFieldsFromMapping.forEach((col: string) => {
+            if (!newFields.includes(col)) {
+              newFields.push(col);
+            }
+          });
+          return {
+            ...prev,
+            layoutImage: fileDataUrl,
+            layoutMappings: data.mappings,
+            headerFields: newFields.length > 0 ? newFields : prev.headerFields,
+          };
+        });
+        if (outputs.includes("Custom Size")) {
+          setIsLabelUploaded(true);
+        } else {
+          setIsDNUploaded(true);
+        }
+      } else {
+        alert("Failed to analyze layout image.");
+      }
+    } catch (err) {
+      console.error("Layout analysis error:", err);
+      alert("Error occurred during layout analysis.");
+    } finally {
+      setIsAnalyzingLayout(false);
+    }
+  };
 
   const [setup, setSetup] = useState<RecommendedSetup>({
     deliveryNoteMode: "One document",
@@ -308,7 +358,7 @@ function SetupStudioContent() {
                   <UploadDropzone
                     accept="image/*, .pdf"
                     title="Upload Target Layout"
-                    onUpload={() => setIsDNUploaded(true)}
+                    onUpload={(fileName, fileDataUrl) => handleLayoutUpload(fileName, fileDataUrl)}
                   />
                 </div>
               )}
@@ -319,55 +369,13 @@ function SetupStudioContent() {
                   <UploadDropzone
                     accept="image/*, .pdf"
                     title="Upload Target Label"
-                    onUpload={() => setIsLabelUploaded(true)}
+                    onUpload={(fileName, fileDataUrl) => handleLayoutUpload(fileName, fileDataUrl)}
                   />
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {isExcelUploaded && excelColumns.length > 0 && (
-            <Card className="border-border shadow-sm">
-              <CardHeader className="pb-3 border-b border-border bg-muted/10">
-                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  3. Selected Header Fields
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4 space-y-3">
-                <p className="text-[10px] text-muted-foreground leading-normal">
-                  Select key fields from your spreadsheet to group items and construct delivery note document headers.
-                </p>
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {excelColumns.map((col) => {
-                    const isChecked = setup.headerFields.includes(col);
-                    return (
-                      <button
-                        key={col}
-                        type="button"
-                        onClick={() => {
-                          setSetup((prev) => {
-                            const alreadySelected = prev.headerFields.includes(col);
-                            const nextFields = alreadySelected
-                              ? prev.headerFields.filter((f) => f !== col)
-                              : [...prev.headerFields, col];
-                            return { ...prev, headerFields: nextFields };
-                          });
-                        }}
-                        className={`text-[10px] px-2.5 py-1 rounded-full border transition-all duration-200 flex items-center gap-1 cursor-pointer ${
-                          isChecked
-                            ? "bg-primary/10 border-primary/50 text-primary font-medium"
-                            : "bg-background border-border text-muted-foreground hover:border-muted-foreground/30"
-                        }`}
-                      >
-                        {isChecked && <Check className="h-3 w-3" />}
-                        {col}
-                      </button>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
 
         {/* Center Column: Live preview tab */}
@@ -380,6 +388,9 @@ function SetupStudioContent() {
             barcodeContent={setup.barcodeContent}
             outputs={outputs}
             rows={excelRows}
+            layoutImage={setup.layoutImage}
+            layoutMappings={setup.layoutMappings}
+            isAnalyzingLayout={isAnalyzingLayout}
           />
         </div>
 

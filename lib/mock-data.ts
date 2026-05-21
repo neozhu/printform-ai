@@ -8,6 +8,8 @@ export interface RecommendedSetup {
   barcodeContent: string;
   customWidth?: number;
   customHeight?: number;
+  layoutImage?: string;
+  layoutMappings?: any;
 }
 
 export interface TemplatePackage {

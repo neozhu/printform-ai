@@ -9,9 +9,18 @@ interface MockDeliveryNotePreviewProps {
     deliveryNoteMode?: string;
   };
   rows?: any[];
+  layoutImage?: string;
+  layoutMappings?: any;
 }
 
-export function MockDeliveryNotePreview({ scale = 1, isLandscape = false, data, rows }: MockDeliveryNotePreviewProps) {
+export function MockDeliveryNotePreview({
+  scale = 1,
+  isLandscape = false,
+  data,
+  rows,
+  layoutImage,
+  layoutMappings,
+}: MockDeliveryNotePreviewProps) {
   const customer = data?.customer || "Tesla Motors";
   const mode = data?.deliveryNoteMode || "By Delivery No.";
 
@@ -45,16 +54,122 @@ export function MockDeliveryNotePreview({ scale = 1, isLandscape = false, data, 
         { part: "PART-1150-C1", desc: "CyberTruck Body Panel Clip", qty: "5,000", uom: "PCS" }
       ];
 
+  if (layoutMappings?.htmlTemplate) {
+    // Build the table rows HTML
+    let tableRowsHtml = "";
+    itemsToRender.forEach((item, idx) => {
+      const part = firstRow ? String(item[partKey] || "") : item.part;
+      const desc = firstRow ? String(item[descKey] || "") : item.desc;
+      const qty = firstRow ? String(item[qtyKey] || "") : item.qty;
+      const uom = firstRow ? (uomKey ? String(item[uomKey] || "") : "PCS") : item.uom;
+
+      if (layoutMappings.rowTemplate) {
+        let rowTemp = layoutMappings.rowTemplate;
+
+        // Replace dynamic Excel columns from the item object
+        Object.keys(item).forEach((colName) => {
+          const val = String(item[colName] ?? "");
+          const regex = new RegExp(`\\{\\{\\s*${colName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*\\}\\}`, 'gi');
+          rowTemp = rowTemp.replace(regex, val);
+        });
+
+        rowTemp = rowTemp
+          .replace(/\{\{Index\}\}/g, String(idx + 1))
+          .replace(/\{\{part\}\}/gi, part)
+          .replace(/\{\{desc\}\}/gi, desc)
+          .replace(/\{\{qty\}\}/gi, qty)
+          .replace(/\{\{uom\}\}/gi, uom);
+        
+        tableRowsHtml += rowTemp;
+      } else {
+        tableRowsHtml += `
+          <tr style="border-bottom: 1px solid #e4e4e7;">
+            <td style="padding: 8px 4px; font-weight: bold; text-align: left;">${idx + 1}</td>
+            <td style="padding: 8px 4px;">
+              <span style="font-weight: bold; display: block; color: #27272a;">${part}</span>
+              <span style="color: #71717a; font-size: 10px; display: block;">${desc}</span>
+            </td>
+            <td style="padding: 8px 4px; text-align: right; font-weight: 600;">${qty}</td>
+            <td style="padding: 8px 4px; text-align: right; color: #71717a;">${uom}</td>
+          </tr>
+        `;
+      }
+    });
+
+    // Generate Barcode HTML
+    const barcodeHtml = `
+      <div style="width: 192px; height: 32px; background-color: #18181b; display: flex; flex-direction: column; align-items: stretch; justify-content: center; padding: 2px; border-radius: 4px; box-sizing: border-box; overflow: hidden; margin: 0 auto;">
+        <div style="height: 100%; background-color: white; display: flex; align-items: center; justify-content: space-around;">
+          ${Array.from({ length: 42 }).map((_, i) => `
+            <div style="height: 100%; background-color: black; width: ${(i % 3 === 0 ? 3 : i % 2 === 0 ? 1 : 2)}px;"></div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    // Replace placeholders in htmlTemplate
+    let renderedHtml = layoutMappings.htmlTemplate;
+
+    // Replace dynamic Excel columns in the htmlTemplate from the first item row if available
+    if (firstRow) {
+      Object.keys(firstRow).forEach((colName) => {
+        const val = String(firstRow[colName] ?? "");
+        const regex = new RegExp(`\\{\\{\\s*${colName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*\\}\\}`, 'gi');
+        renderedHtml = renderedHtml.replace(regex, val);
+      });
+    }
+
+    renderedHtml = renderedHtml
+      .replace(/\{\{TableRows\}\}/gi, tableRowsHtml)
+      .replace(/\{\{Items\}\}/gi, tableRowsHtml)
+      .replace(/\{\{Barcode\}\}/gi, barcodeHtml)
+      .replace(/\{\{Customer\}\}/gi, customer)
+      .replace(/\{\{Customer Name\}\}/gi, customer)
+      .replace(/\{\{DocNo\}\}/gi, docNo)
+      .replace(/\{\{Doc No\}\}/gi, docNo)
+      .replace(/\{\{Date\}\}/gi, date)
+      .replace(/\{\{PONumber\}\}/gi, poNumber)
+      .replace(/\{\{PO Number\}\}/gi, poNumber)
+      .replace(/\{\{Carrier\}\}/gi, carrier);
+
+    const transformStyle = scale && scale !== 1 ? {
+      transform: `scale(${scale})`,
+      transformOrigin: "top center" as const,
+    } : {};
+
+    return (
+      <div className="min-w-full w-fit flex justify-center py-4 bg-muted/20  rounded-xl">
+        <div
+          id="print-dn-content"
+          className="bg-white text-zinc-900 rounded-lg shadow-sm font-sans relative"
+          style={{
+            width: isLandscape ? "820px" : "595px",
+            height: isLandscape ? "595px" : "820px",
+            ...transformStyle,
+            padding: 0,
+            boxSizing: "border-box",
+            overflow: "hidden"
+          }}
+          dangerouslySetInnerHTML={{ __html: renderedHtml }}
+        />
+      </div>
+    );
+  }
+
+  const transformStyle = scale && scale !== 1 ? {
+    transform: `scale(${scale})`,
+    transformOrigin: "top center" as const,
+  } : {};
+
   return (
-    <div className="w-full flex justify-center py-4 bg-muted/20 border border-border rounded-xl overflow-hidden">
+    <div className="min-w-full w-fit flex justify-center py-4 bg-muted/20  rounded-xl">
       <div 
         id="print-dn-content"
-        className="bg-white text-zinc-900 border border-zinc-200 rounded-lg shadow-sm font-sans relative"
+        className="bg-white text-zinc-900 rounded-lg shadow-sm font-sans relative"
         style={{
           width: isLandscape ? "820px" : "595px",
           minHeight: isLandscape ? "595px" : "820px",
-          transform: `scale(${scale})`,
-          transformOrigin: "top center",
+          ...transformStyle,
           padding: isLandscape ? "28px" : "36px",
           fontSize: "12px",
           lineHeight: "1.5",
@@ -81,13 +196,13 @@ export function MockDeliveryNotePreview({ scale = 1, isLandscape = false, data, 
             <h3 className="font-bold text-zinc-500 uppercase text-[10px] tracking-wider mb-1">From (Supplier)</h3>
             <p className="font-bold">PRINTFORM AI AUTO PARTS LTD</p>
             <p className="text-zinc-600">Industrial Park, Building 4B</p>
-            <p className="text-zinc-600">Shenzhen, GD, China</p>
+            <p className="text-zinc-650">Shenzhen, GD, China</p>
           </div>
           <div>
             <h3 className="font-bold text-zinc-500 uppercase text-[10px] tracking-wider mb-1">Ship To (Customer)</h3>
             <p className="font-bold">{customer.toUpperCase()} GIGAFACTORY</p>
-            <p className="text-zinc-600">Receiving Dock 4, Building A</p>
-            <p className="text-zinc-600">Austin, TX, USA</p>
+            <p className="text-zinc-660">Receiving Dock 4, Building A</p>
+            <p className="text-zinc-670">Austin, TX, USA</p>
           </div>
         </div>
 

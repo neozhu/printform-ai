@@ -9,7 +9,7 @@ interface UploadDropzoneProps {
   accept: string;
   title: string;
   subtitle?: string;
-  onUpload: (fileName: string) => void;
+  onUpload: (fileName: string, fileDataUrl?: string) => void;
   onExcelParsed?: (data: { sheetName: string; columns: string[]; rows: any[] }) => void;
 }
 
@@ -95,12 +95,19 @@ export function UploadDropzone({ accept, title, subtitle, onUpload, onExcelParse
       };
       reader.readAsArrayBuffer(file);
     } else {
-      // Simulate normal upload for other file types (images, pdfs)
-      setTimeout(() => {
+      // Read file as Data URL and upload
+      const dataReader = new FileReader();
+      dataReader.onload = (e) => {
+        const result = e.target?.result as string;
         setUploading(false);
         setUploadedFile(file.name);
-        onUpload(file.name);
-      }, 1000);
+        onUpload(file.name, result);
+      };
+      dataReader.onerror = () => {
+        setUploading(false);
+        alert("Failed to read file.");
+      };
+      dataReader.readAsDataURL(file);
     }
   };
 

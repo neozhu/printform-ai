@@ -5,7 +5,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MockDeliveryNotePreview } from "./mock-delivery-note-preview";
 import { MockLabelPreview } from "./mock-label-preview";
 import { Button } from "@/components/ui/button";
-import { ZoomIn, ZoomOut, Maximize } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 interface PreviewTabsProps {
   customerName?: string;
@@ -15,6 +15,9 @@ interface PreviewTabsProps {
   barcodeContent?: string;
   outputs?: string[];
   rows?: any[];
+  layoutImage?: string;
+  layoutMappings?: any;
+  isAnalyzingLayout?: boolean;
 }
 
 export function PreviewTabs({
@@ -25,12 +28,14 @@ export function PreviewTabs({
   barcodeContent,
   outputs = ["A4 Portrait"],
   rows,
+  layoutImage,
+  layoutMappings,
+  isAnalyzingLayout = false,
 }: PreviewTabsProps) {
   const showDN = outputs.includes("A4 Portrait") || outputs.includes("A4 Landscape");
   const showLabel = outputs.includes("Custom Size");
 
   const [activeTab, setActiveTab] = useState(showDN ? "delivery-note" : "label");
-  const [zoom, setZoom] = useState(1);
 
   React.useEffect(() => {
     if (showDN && !showLabel) {
@@ -39,10 +44,6 @@ export function PreviewTabs({
       setActiveTab("label");
     }
   }, [showDN, showLabel]);
-
-  const handleZoomIn = () => setZoom((z) => Math.min(z + 0.1, 1.4));
-  const handleZoomOut = () => setZoom((z) => Math.max(z - 0.1, 0.6));
-  const handleZoomReset = () => setZoom(1);
 
   const previewData = {
     customer: customerName,
@@ -54,7 +55,7 @@ export function PreviewTabs({
 
   return (
     <div className="flex flex-col h-full bg-card border border-border rounded-xl shadow-sm overflow-hidden min-h-[500px]">
-      {/* Tab bar + Zoom Controls */}
+      {/* Tab bar */}
       <div className="flex items-center justify-between border-b border-border px-4 py-2 bg-muted/20">
         {outputs.length > 1 ? (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
@@ -76,37 +77,33 @@ export function PreviewTabs({
                   : "A4 Document Preview")}
           </span>
         )}
-
-        {/* Zoom controls */}
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon-sm" onClick={handleZoomOut} title="Zoom Out">
-            <ZoomOut className="h-3.5 w-3.5" />
-          </Button>
-          <span className="text-xs font-mono font-semibold text-muted-foreground w-10 text-center">
-            {Math.round(zoom * 100)}%
-          </span>
-          <Button variant="ghost" size="icon-sm" onClick={handleZoomIn} title="Zoom In">
-            <ZoomIn className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon-sm" onClick={handleZoomReset} title="Actual Size / Reset">
-            <Maximize className="h-3.5 w-3.5" />
-          </Button>
-        </div>
       </div>
 
       {/* Preview area */}
-      <div className="flex-1 overflow-auto p-6 bg-muted/5 flex items-start justify-center">
-        <div className="w-full transition-transform duration-150">
+      <div className="flex-1 overflow-auto p-6 bg-muted/5 flex items-start justify-center relative">
+        {isAnalyzingLayout && (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center gap-3">
+            <Loader2 className="h-7 w-7 text-primary animate-spin" />
+            <p className="text-xs font-semibold text-foreground uppercase tracking-wider">AI mapping layout coordinates...</p>
+          </div>
+        )}
+        <div className="w-fit min-w-full transition-transform duration-150">
           {activeTab === "delivery-note" && showDN && (
             <MockDeliveryNotePreview 
-              scale={zoom} 
               isLandscape={outputs.includes("A4 Landscape")}
               data={previewData} 
               rows={rows} 
+              layoutImage={layoutImage}
+              layoutMappings={layoutMappings}
             />
           )}
           {activeTab === "label" && showLabel && (
-            <MockLabelPreview scale={zoom} data={previewData} rows={rows} />
+            <MockLabelPreview 
+              data={previewData} 
+              rows={rows} 
+              layoutImage={layoutImage}
+              layoutMappings={layoutMappings}
+            />
           )}
           {((!showDN && activeTab === "delivery-note") || (!showLabel && activeTab === "label")) && (
             <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground w-full">
