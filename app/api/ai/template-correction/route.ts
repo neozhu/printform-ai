@@ -8,7 +8,7 @@ import { TEMPLATE_CORRECTION_SYSTEM_PROMPT } from "@/lib/ai/prompts";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { message, currentSetup } = body;
+    const { message, currentSetup, excelColumns, excelRows } = body;
 
     if (!message) {
       return NextResponse.json({ error: "Message is required" }, { status: 400 });
@@ -21,15 +21,25 @@ export async function POST(req: Request) {
     if (apiKey && apiKey.startsWith("sk-")) {
       try {
         const openai = createOpenAI({ apiKey });
+        
+        let promptText = `User message requesting correction: "${message}"\n\nCurrent recommended setup:\n${JSON.stringify(
+          currentSetup,
+          null,
+          2
+        )}`;
+        
+        if (excelColumns && excelColumns.length > 0) {
+          promptText += `\n\nAvailable spreadsheet columns: ${JSON.stringify(excelColumns)}`;
+        }
+        if (excelRows && excelRows.length > 0) {
+          promptText += `\n\nSample spreadsheet row data (first 5 rows): ${JSON.stringify(excelRows)}`;
+        }
+
         const { object } = await generateObject({
           model: openai(modelName),
           schema: templateCorrectionResponseSchema,
           system: TEMPLATE_CORRECTION_SYSTEM_PROMPT,
-          prompt: `User message requesting correction: "${message}"\n\nCurrent recommended setup:\n${JSON.stringify(
-            currentSetup,
-            null,
-            2
-          )}`,
+          prompt: promptText,
         });
         return NextResponse.json(object);
       } catch (aiError: any) {

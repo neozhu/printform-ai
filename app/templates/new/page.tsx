@@ -33,6 +33,9 @@ function SetupStudioContent() {
   const [isExcelUploaded, setIsExcelUploaded] = useState(false);
   const [isDNUploaded, setIsDNUploaded] = useState(false);
   const [isLabelUploaded, setIsLabelUploaded] = useState(false);
+  
+  const [excelColumns, setExcelColumns] = useState<string[]>([]);
+  const [excelRows, setExcelRows] = useState<any[]>([]);
 
   const [isAILoading, setIsAILoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -87,6 +90,8 @@ function SetupStudioContent() {
         body: JSON.stringify({
           message,
           currentSetup: setup,
+          excelColumns,
+          excelRows: excelRows.slice(0, 5),
         }),
       });
       if (res.ok) {
@@ -255,9 +260,22 @@ function SetupStudioContent() {
               <div className="space-y-1">
                 <span className="text-[10px] text-muted-foreground font-bold uppercase block">Sample Excel</span>
                 <UploadDropzone
-                  accept=".xlsx, .xls"
+                  accept=".xlsx, .xls, .csv"
                   title="Upload Sample Excel"
                   onUpload={() => setIsExcelUploaded(true)}
+                  onExcelParsed={(data) => {
+                    setExcelColumns(data.columns);
+                    setExcelRows(data.rows);
+                    // Pre-select columns as headerFields if none are currently selected
+                    setSetup(prev => {
+                      if (prev.headerFields.length === 0 || prev.headerFields.every(h => h.startsWith("Customer Name") || h.startsWith("PO Number"))) {
+                        // Keep a smart subset or default to all if small, or first 3 columns
+                        const smartHeaders = data.columns.slice(0, 4);
+                        return { ...prev, headerFields: smartHeaders };
+                      }
+                      return prev;
+                    });
+                  }}
                 />
               </div>
 
@@ -284,6 +302,49 @@ function SetupStudioContent() {
               )}
             </CardContent>
           </Card>
+
+          {isExcelUploaded && excelColumns.length > 0 && (
+            <Card className="border-border shadow-sm">
+              <CardHeader className="pb-3 border-b border-border bg-muted/10">
+                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  3. Selected Header Fields
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-3">
+                <p className="text-[10px] text-muted-foreground leading-normal">
+                  Select key fields from your spreadsheet to group items and construct delivery note document headers.
+                </p>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {excelColumns.map((col) => {
+                    const isChecked = setup.headerFields.includes(col);
+                    return (
+                      <button
+                        key={col}
+                        type="button"
+                        onClick={() => {
+                          setSetup((prev) => {
+                            const alreadySelected = prev.headerFields.includes(col);
+                            const nextFields = alreadySelected
+                              ? prev.headerFields.filter((f) => f !== col)
+                              : [...prev.headerFields, col];
+                            return { ...prev, headerFields: nextFields };
+                          });
+                        }}
+                        className={`text-[10px] px-2.5 py-1 rounded-full border transition-all duration-200 flex items-center gap-1 cursor-pointer ${
+                          isChecked
+                            ? "bg-primary/10 border-primary/50 text-primary font-medium"
+                            : "bg-background border-border text-muted-foreground hover:border-muted-foreground/30"
+                        }`}
+                      >
+                        {isChecked && <Check className="h-3 w-3" />}
+                        {col}
+                      </button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Center Column: Live preview tab */}

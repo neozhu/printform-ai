@@ -28,6 +28,67 @@ function PrintWorkspaceContent() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isPrinting, setIsPrinting] = useState(false);
 
+  const [parsedColumns, setParsedColumns] = useState<string[]>([]);
+  const [parsedRows, setParsedRows] = useState<any[]>([]);
+
+  const getGroupKey = () => {
+    if (!activeSetup || parsedRows.length === 0) return null;
+    
+    // Look for a column from the actual sheet that matches any header field in activeSetup.headerFields
+    const matchedField = activeSetup.headerFields.find(field => 
+      parsedRows[0] && Object.keys(parsedRows[0]).some(k => k.toLowerCase() === field.toLowerCase())
+    );
+    if (matchedField) {
+      return Object.keys(parsedRows[0]).find(k => k.toLowerCase() === matchedField.toLowerCase()) || null;
+    }
+    
+    // Fallbacks based on deliveryNoteMode
+    const firstRowKeys = Object.keys(parsedRows[0] || {});
+    if (activeSetup.deliveryNoteMode === "By PO No.") {
+      return firstRowKeys.find(k => /po|purchase|order/i.test(k)) || null;
+    }
+    if (activeSetup.deliveryNoteMode === "By Delivery No.") {
+      return firstRowKeys.find(k => /deliv|dn|ship|invoice/i.test(k)) || null;
+    }
+    return null;
+  };
+
+  const calculateDocumentCount = () => {
+    if (parsedRows.length === 0) return 0;
+    if (activeSetup?.deliveryNoteMode === "One document") return 1;
+    
+    const groupKey = getGroupKey();
+    if (!groupKey) {
+      return Math.min(parsedRows.length, 3); // Fallback: group by a default split
+    }
+    
+    const uniqueValues = new Set(parsedRows.map(r => String(r[groupKey] || "").trim()).filter(Boolean));
+    return uniqueValues.size || 1;
+  };
+
+  const calculateLabelCount = () => {
+    if (parsedRows.length === 0) return 0;
+    if (activeSetup?.labelQuantityRule === "One label per row") {
+      return parsedRows.length;
+    }
+    
+    const firstRowKeys = Object.keys(parsedRows[0] || {});
+    const qtyKey = firstRowKeys.find(k => /qty|quantity|pcs|pieces|pack|box|carton/i.test(k));
+    if (qtyKey) {
+      const total = parsedRows.reduce((sum, row) => {
+        const val = parseInt(row[qtyKey]);
+        return sum + (isNaN(val) ? 1 : val);
+      }, 0);
+      return total;
+    }
+    
+    return parsedRows.length;
+  };
+
+  const rowCount = parsedRows.length;
+  const docCount = calculateDocumentCount();
+  const labelCount = calculateLabelCount();
+
   // Load locked templates from Supabase
   useEffect(() => {
     getTemplatePackages()
@@ -53,6 +114,8 @@ function PrintWorkspaceContent() {
     setSelectedTemplate(pkg);
     setIsUploaded(false);
     setFileName("");
+    setParsedColumns([]);
+    setParsedRows([]);
     setSuccessMessage(null);
     if (pkg) {
       setActiveSetup(pkg.recommendedSetup);
@@ -64,6 +127,11 @@ function PrintWorkspaceContent() {
   const handleExcelUpload = (name: string) => {
     setFileName(name);
     setIsUploaded(true);
+  };
+
+  const handleExcelParsed = (data: { sheetName: string; columns: string[]; rows: any[] }) => {
+    setParsedColumns(data.columns);
+    setParsedRows(data.rows);
   };
 
   const handleAICorrection = async (message: string) => {
@@ -96,6 +164,8 @@ function PrintWorkspaceContent() {
   const resetUpload = () => {
     setIsUploaded(false);
     setFileName("");
+    setParsedColumns([]);
+    setParsedRows([]);
   };
 
   return (
@@ -163,10 +233,11 @@ function PrintWorkspaceContent() {
               </CardHeader>
               <CardContent>
                 <UploadDropzone
-                  accept=".xlsx, .xls"
+                  accept=".xlsx, .xls, .csv"
                   title="Upload Excel Spreadsheet"
                   subtitle="Drag and drop shipment manifest row data here"
                   onUpload={handleExcelUpload}
+                  onExcelParsed={handleExcelParsed}
                 />
               </CardContent>
             </Card>
@@ -212,22 +283,69 @@ function PrintWorkspaceContent() {
                   </button>
                 </div>
 
-                <div className="border-t border-border/80 pt-3 space-y-2">
+                 <div className="border-t border-border/80 pt-3 space-y-2">
                   <div className="flex justify-between text-xs font-medium">
                     <span className="text-muted-foreground">Parsed Rows:</span>
-                    <span className="font-bold text-foreground">142 rows</span>
+                    <span className="font-bold text-foreground">{rowCount} rows</span>
                   </div>
                   <div className="flex justify-between text-xs font-medium">
                     <span className="text-muted-foreground">Delivery Notes:</span>
-                    <span className="font-bold text-foreground">8 documents</span>
+                    <span className="font-bold text-foreground">{docCount} documents</span>
                   </div>
                   <div className="flex justify-between text-xs font-medium">
                     <span className="text-muted-foreground">Generated Labels:</span>
-                    <span className="font-bold text-foreground">142 labels</span>
+                    <span className="font-bold text-foreground">{labelCount} labels</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
+
+            {parsedRows.length > 0 && (
+              <Card className="border-border shadow-sm overflow-hidden">
+                <CardHeader className="pb-2 border-b border-border bg-muted/10 flex flex-row items-center justify-between">
+                  <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Spreadsheet Preview
+                  </CardTitle>
+                  <Badge variant="outline" className="text-[10px] font-normal px-2 py-0">
+                    First 5 Rows
+                  </Badge>
+                </CardHeader>
+                <CardContent className="p-0 overflow-x-auto max-h-[220px] overflow-y-auto">
+                  <table className="w-full text-[10px] text-left border-collapse">
+                    <thead>
+                      <tr className="bg-muted/40 border-b border-border">
+                        {parsedColumns.slice(0, 5).map((col) => (
+                          <th key={col} className="p-2 font-semibold text-muted-foreground uppercase tracking-wider border-r border-border last:border-r-0">
+                            {col}
+                          </th>
+                        ))}
+                        {parsedColumns.length > 5 && (
+                          <th className="p-2 font-semibold text-muted-foreground uppercase tracking-wider">
+                            +{parsedColumns.length - 5} more
+                          </th>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {parsedRows.slice(0, 5).map((row, rowIndex) => (
+                        <tr key={rowIndex} className="border-b border-border/60 hover:bg-muted/10 last:border-b-0">
+                          {parsedColumns.slice(0, 5).map((col) => (
+                            <td key={col} className="p-2 border-r border-border/60 last:border-r-0 text-foreground truncate max-w-[120px]" title={row[col]}>
+                              {String(row[col] ?? "")}
+                            </td>
+                          ))}
+                          {parsedColumns.length > 5 && (
+                            <td className="p-2 text-muted-foreground italic">
+                              ...
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </CardContent>
+              </Card>
+            )}
 
             <Card className="border-border shadow-sm bg-muted/10">
               <CardHeader className="pb-2">
@@ -262,6 +380,7 @@ function PrintWorkspaceContent() {
               labelQuantityRule={activeSetup?.labelQuantityRule}
               barcodeContent={activeSetup?.barcodeContent}
               outputs={selectedTemplate?.outputs}
+              rows={parsedRows}
             />
           </div>
 
@@ -304,9 +423,9 @@ function PrintWorkspaceContent() {
                       await logPrintSession({
                         templatePackageId: selectedTemplate.id,
                         fileName: fileName || "shipment_manifest.xlsx",
-                        rowCount: 142,
-                        documentCount: 8,
-                        labelCount: 142,
+                        rowCount: rowCount,
+                        documentCount: docCount,
+                        labelCount: labelCount,
                       });
                       setSuccessMessage("Print job completed. Session logged to database.");
                       setTimeout(() => setSuccessMessage(null), 5000);

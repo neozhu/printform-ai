@@ -3,28 +3,105 @@
 import React, { useState, useRef } from "react";
 import { UploadCloud, FileSpreadsheet, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import * as XLSX from "xlsx";
 
 interface UploadDropzoneProps {
   accept: string;
   title: string;
   subtitle?: string;
   onUpload: (fileName: string) => void;
+  onExcelParsed?: (data: { sheetName: string; columns: string[]; rows: any[] }) => void;
 }
 
-export function UploadDropzone({ accept, title, subtitle, onUpload }: UploadDropzoneProps) {
+export function UploadDropzone({ accept, title, subtitle, onUpload, onExcelParsed }: UploadDropzoneProps) {
   const [isDragActive, setIsDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const simulateUpload = (fileName: string) => {
+  const processFile = (file: File) => {
     setUploading(true);
     setUploadedFile(null);
-    setTimeout(() => {
-      setUploading(false);
-      setUploadedFile(fileName);
-      onUpload(fileName);
-    }, 1200);
+
+    const isExcelOrCsv = 
+      file.name.endsWith(".xlsx") || 
+      file.name.endsWith(".xls") || 
+      file.name.endsWith(".csv") ||
+      file.type === "text/csv" ||
+      file.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+      file.type === "application/vnd.ms-excel";
+
+    if (isExcelOrCsv && onExcelParsed) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = e.target?.result;
+          if (!data) {
+            throw new Error("Could not read file data");
+          }
+          const workbook = XLSX.read(data, { type: "array" });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          
+          // Get headers (columns)
+          const headers: string[] = [];
+          if (worksheet["!ref"]) {
+            const range = XLSX.utils.decode_range(worksheet["!ref"]);
+            const R = range.s.r; // start row index
+            for (let c = range.s.c; c <= range.e.c; ++c) {
+              const cell = worksheet[XLSX.utils.encode_cell({ r: R, c: c })];
+              let hdr = "";
+              if (cell && cell.t !== undefined) {
+                hdr = XLSX.utils.format_cell(cell).trim();
+              }
+              if (!hdr) {
+                hdr = `Column_${c + 1}`;
+              }
+              headers.push(hdr);
+            }
+          }
+          
+          // Get row data
+          const rows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+          
+          // Clean keys and values
+          const parsedRows = rows.map((row: any) => {
+            const cleanRow: any = {};
+            Object.keys(row).forEach((k) => {
+              cleanRow[k.trim()] = typeof row[k] === "string" ? row[k].trim() : row[k];
+            });
+            return cleanRow;
+          });
+
+          // Callback with sheet data
+          onExcelParsed({
+            sheetName: firstSheetName,
+            columns: headers,
+            rows: parsedRows,
+          });
+
+          setUploading(false);
+          setUploadedFile(file.name);
+          onUpload(file.name);
+        } catch (error) {
+          console.error("Excel parsing failed:", error);
+          setUploading(false);
+          alert("Failed to parse Excel file. Please make sure it is a valid spreadsheet.");
+        }
+      };
+      reader.onerror = () => {
+        setUploading(false);
+        alert("Failed to read file.");
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      // Simulate normal upload for other file types (images, pdfs)
+      setTimeout(() => {
+        setUploading(false);
+        setUploadedFile(file.name);
+        onUpload(file.name);
+      }, 1000);
+    }
   };
 
   const handleDrag = (e: React.DragEvent) => {
@@ -43,15 +120,14 @@ export function UploadDropzone({ accept, title, subtitle, onUpload }: UploadDrop
     setIsDragActive(false);
     
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      simulateUpload(file.name);
+      processFile(e.dataTransfer.files[0]);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
     if (e.target.files && e.target.files[0]) {
-      simulateUpload(e.target.files[0].name);
+      processFile(e.target.files[0]);
     }
   };
 

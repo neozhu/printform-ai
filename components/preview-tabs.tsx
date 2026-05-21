@@ -14,6 +14,7 @@ interface PreviewTabsProps {
   labelQuantityRule?: string;
   barcodeContent?: string;
   outputs?: string[];
+  rows?: any[];
 }
 
 export function PreviewTabs({
@@ -23,6 +24,7 @@ export function PreviewTabs({
   labelQuantityRule,
   barcodeContent,
   outputs = ["Delivery Note", "Label"],
+  rows,
 }: PreviewTabsProps) {
   const showDN = outputs.includes("Delivery Note");
   const showLabel = outputs.includes("Label");
@@ -78,10 +80,10 @@ export function PreviewTabs({
       <div className="flex-1 overflow-auto p-6 bg-muted/5 flex items-start justify-center">
         <div className="w-full transition-transform duration-150">
           {activeTab === "delivery-note" && showDN && (
-            <MockDeliveryNotePreview scale={zoom} data={previewData} />
+            <MockDeliveryNotePreview scale={zoom} data={previewData} rows={rows} />
           )}
           {activeTab === "label" && showLabel && (
-            <MockLabelPreview scale={zoom} data={previewData} />
+            <MockLabelPreview scale={zoom} data={previewData} rows={rows} />
           )}
           {((!showDN && activeTab === "delivery-note") || (!showLabel && activeTab === "label")) && (
             <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground w-full">
