@@ -1,18 +1,42 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Sparkles, ArrowUp, Loader2 } from "lucide-react";
+import { Sparkles, ArrowUp, Loader2, History } from "lucide-react";
+import { CorrectionHistoryItem } from "@/lib/mock-data";
 
 interface AICorrectionBoxProps {
   onSubmit: (message: string) => void;
   isLoading?: boolean;
+  excelColumns?: string[];
+  value?: string;
+  onChange?: (val: string) => void;
+  history?: CorrectionHistoryItem[];
 }
 
-export function AICorrectionBox({ onSubmit, isLoading = false }: AICorrectionBoxProps) {
-  const [value, setValue] = useState("");
+export function AICorrectionBox({ 
+  onSubmit, 
+  isLoading = false,
+  excelColumns = [],
+  value: controlledValue,
+  onChange: controlledOnChange,
+  history = [],
+}: AICorrectionBoxProps) {
+  const [localValue, setLocalValue] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const isControlled = controlledValue !== undefined;
+  const value = isControlled ? controlledValue : localValue;
+
+  const setValue = (val: string) => {
+    if (controlledOnChange) {
+      controlledOnChange(val);
+    } else {
+      setLocalValue(val);
+    }
+  };
 
   const examples = [
     "Use delivery quantity for quantity",
@@ -27,6 +51,35 @@ export function AICorrectionBox({ onSubmit, isLoading = false }: AICorrectionBox
     setValue("");
   };
 
+  const handleInsertColumn = (col: string) => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = value;
+      const before = text.substring(0, start);
+      const after = text.substring(end, text.length);
+      
+      // Determine if spacing is needed around the column name
+      const insertText = (start > 0 && !before.endsWith(" ") ? " " : "") + 
+                         `"${col}"` + 
+                         (after !== "" && !after.startsWith(" ") ? " " : "");
+      
+      const newValue = before + insertText + after;
+      setValue(newValue);
+      
+      // Restore focus and position cursor after selection update
+      setTimeout(() => {
+        textarea.focus();
+        const cursorPosition = start + insertText.length;
+        textarea.setSelectionRange(cursorPosition, cursorPosition);
+      }, 0);
+    } else {
+      // Fallback: append at the end
+      setValue(value ? `${value} "${col}"` : `"${col}"`);
+    }
+  };
+
   return (
     <Card className="border-border shadow-sm bg-card/65 backdrop-blur-sm">
       <CardHeader className="pb-3 border-b border-border bg-muted/20">
@@ -38,6 +91,7 @@ export function AICorrectionBox({ onSubmit, isLoading = false }: AICorrectionBox
       <CardContent className="pt-4 space-y-4">
         <form onSubmit={handleSubmit} className="relative">
           <Textarea
+            ref={textareaRef}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder="Instruct the AI helper to adjust rules (e.g., 'Use PO number as barcode content')..."
@@ -58,6 +112,27 @@ export function AICorrectionBox({ onSubmit, isLoading = false }: AICorrectionBox
           </Button>
         </form>
 
+        {excelColumns && excelColumns.length > 0 && (
+          <div className="space-y-1.5">
+            <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">
+              Excel Fields (Click to insert)
+            </span>
+            <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto pr-1">
+              {excelColumns.map((col) => (
+                <button
+                  key={col}
+                  type="button"
+                  className="text-[10px] px-2 py-1 rounded bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium transition-colors border border-border cursor-pointer shadow-sm active:scale-95 duration-100"
+                  onClick={() => handleInsertColumn(col)}
+                  disabled={isLoading}
+                >
+                  {col}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="space-y-1.5">
           <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">
             Suggested Corrections
@@ -76,6 +151,44 @@ export function AICorrectionBox({ onSubmit, isLoading = false }: AICorrectionBox
             ))}
           </div>
         </div>
+
+        {history && history.length > 0 && (
+          <div className="space-y-2 pt-3 border-t border-border/80">
+            <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider flex items-center gap-1">
+              <History className="h-3 w-3 text-muted-foreground" />
+              Optimization History
+            </span>
+            <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 select-none">
+              {history.slice().reverse().map((item, idx) => (
+                <div 
+                  key={idx} 
+                  className="text-xs p-2 rounded-lg bg-muted/40 border border-border/40 hover:border-border/80 transition-all duration-200 space-y-1.5"
+                >
+                  <div className="flex items-center justify-between text-[9px] text-muted-foreground">
+                    <span className="font-semibold text-foreground/75">
+                      Instruction #{history.length - idx}
+                    </span>
+                    <span>
+                      {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </span>
+                  </div>
+                  <p 
+                    className="text-[11px] text-foreground font-medium italic bg-background/50 px-2 py-1 rounded cursor-pointer hover:bg-background transition-colors duration-150"
+                    onClick={() => setValue(item.prompt)}
+                    title="Click to copy to input"
+                  >
+                    "{item.prompt}"
+                  </p>
+                  {item.explanation && (
+                    <p className="text-[10px] text-muted-foreground font-normal leading-relaxed pl-1 border-l border-foreground/10">
+                      {item.explanation}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -18,6 +18,7 @@ interface PreviewTabsProps {
   layoutImage?: string;
   layoutMappings?: any;
   isAnalyzingLayout?: boolean;
+  isEmpty?: boolean;
 }
 
 export function PreviewTabs({
@@ -31,6 +32,7 @@ export function PreviewTabs({
   layoutImage,
   layoutMappings,
   isAnalyzingLayout = false,
+  isEmpty = false,
 }: PreviewTabsProps) {
   const showDN = outputs.includes("A4 Portrait") || outputs.includes("A4 Landscape");
   const showLabel = outputs.includes("Custom Size");
@@ -70,11 +72,13 @@ export function PreviewTabs({
           </Tabs>
         ) : (
           <span className="text-xs font-semibold text-foreground uppercase tracking-wider pl-1">
-            {customerName && packageName 
-              ? `${customerName} - ${packageName} PREVIEW` 
-              : (outputs.includes("Custom Size") 
-                  ? "Custom Label Preview" 
-                  : "A4 Document Preview")}
+            {isEmpty 
+              ? "PREVIEW"
+              : (customerName && packageName 
+                  ? `${customerName} - ${packageName} PREVIEW` 
+                  : (outputs.includes("Custom Size") 
+                      ? "Custom Label Preview" 
+                      : "A4 Document Preview"))}
           </span>
         )}
       </div>
@@ -88,27 +92,41 @@ export function PreviewTabs({
           </div>
         )}
         <div className="w-fit min-w-full transition-transform duration-150">
-          {activeTab === "delivery-note" && showDN && (
-            <MockDeliveryNotePreview 
-              isLandscape={outputs.includes("A4 Landscape")}
-              data={previewData} 
-              rows={rows} 
-              layoutImage={layoutImage}
-              layoutMappings={layoutMappings}
-            />
-          )}
-          {activeTab === "label" && showLabel && (
-            <MockLabelPreview 
-              data={previewData} 
-              rows={rows} 
-              layoutImage={layoutImage}
-              layoutMappings={layoutMappings}
-            />
-          )}
-          {((!showDN && activeTab === "delivery-note") || (!showLabel && activeTab === "label")) && (
-            <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground w-full">
-              <p className="text-sm font-medium">No preview available for this output type.</p>
+          {isEmpty ? (
+            <div className="min-w-full w-fit flex justify-center py-4 bg-muted/20 rounded-xl">
+              <div 
+                className="bg-white border border-zinc-250/80 rounded-lg shadow-sm relative"
+                style={{
+                  width: activeTab === "label" ? "300px" : (outputs.includes("A4 Landscape") ? "1123px" : "794px"),
+                  height: activeTab === "label" ? "300px" : (outputs.includes("A4 Landscape") ? "794px" : "1123px"),
+                }}
+              />
             </div>
+          ) : (
+            <>
+              {activeTab === "delivery-note" && showDN && (
+                <MockDeliveryNotePreview 
+                  isLandscape={outputs.includes("A4 Landscape")}
+                  data={previewData} 
+                  rows={rows} 
+                  layoutImage={layoutImage}
+                  layoutMappings={layoutMappings}
+                />
+              )}
+              {activeTab === "label" && showLabel && (
+                <MockLabelPreview 
+                  data={previewData} 
+                  rows={rows} 
+                  layoutImage={layoutImage}
+                  layoutMappings={layoutMappings}
+                />
+              )}
+              {((!showDN && activeTab === "delivery-note") || (!showLabel && activeTab === "label")) && (
+                <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground w-full">
+                  <p className="text-sm font-medium">No preview available for this output type.</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

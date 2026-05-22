@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TemplatePackage, RecommendedSetup } from "@/lib/mock-data";
-import { getTemplatePackages, logPrintSession } from "@/lib/supabase/actions";
+import { getTemplatePackages, logPrintSession, updateTemplatePackage } from "@/lib/supabase/actions";
 import { FileText, Printer, FileSpreadsheet, Download, RefreshCw, CheckCircle, Sparkles } from "lucide-react";
 
 function PrintWorkspaceContent() {
@@ -88,6 +88,10 @@ function PrintWorkspaceContent() {
               border: 1px solid #e4e4e7;
               border-radius: 8px;
               position: relative;
+              font-size: 11px;
+              line-height: 1.4;
+              font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+              color: #18181b;
             }
             @media print {
               body {
@@ -101,7 +105,6 @@ function PrintWorkspaceContent() {
                 width: 100% !important;
                 height: 100% !important;
                 margin: 0 !important;
-                padding: 0 !important;
               }
             }
           </style>
@@ -239,11 +242,36 @@ function PrintWorkspaceContent() {
         body: JSON.stringify({
           message,
           currentSetup: activeSetup,
+          excelColumns: parsedColumns,
+          excelRows: parsedRows.slice(0, 5),
         }),
       });
       if (res.ok) {
         const data = await res.json();
-        setActiveSetup(data.recommendedSetup);
+        const nextSetup = {
+          ...activeSetup,
+          ...data.recommendedSetup,
+          correctionHistory: [
+            ...(activeSetup.correctionHistory || []),
+            {
+              prompt: message,
+              timestamp: new Date().toISOString(),
+              explanation: data.explanation,
+            }
+          ]
+        };
+        setActiveSetup(nextSetup);
+
+        if (selectedTemplate && nextSetup) {
+          await updateTemplatePackage(selectedTemplate.id, {
+            recommendedSetup: nextSetup,
+          });
+          setSelectedTemplate(prev => prev ? {
+            ...prev,
+            recommendedSetup: nextSetup
+          } : null);
+        }
+
         setSuccessMessage(`AI applied fix: ${data.explanation}`);
         setTimeout(() => setSuccessMessage(null), 5000);
       }
@@ -262,7 +290,7 @@ function PrintWorkspaceContent() {
   };
 
   return (
-    <AppShell>
+    <AppShell fullWidth>
       <PageHeader 
         title="Daily Print Workspace" 
         description="Select a template, feed in the shipment spreadsheet, and output formatted printables."
@@ -341,7 +369,7 @@ function PrintWorkspaceContent() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
           {/* Left Column: Job Summary */}
-          <div className="lg:col-span-3 space-y-6">
+          <div className="lg:col-span-2 space-y-6">
             <Card className="border-border shadow-sm">
               <CardHeader className="pb-3 border-b border-border bg-muted/10">
                 <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -465,7 +493,7 @@ function PrintWorkspaceContent() {
           </div>
 
           {/* Center Column: Preview Canvas */}
-          <div className="lg:col-span-6">
+          <div className="lg:col-span-8">
             <PreviewTabs
               customerName={selectedTemplate?.customerName}
               packageName={selectedTemplate?.packageName}
@@ -480,7 +508,7 @@ function PrintWorkspaceContent() {
           </div>
 
           {/* Right Column: Actions & AI adjustments */}
-          <div className="lg:col-span-3 space-y-6">
+          <div className="lg:col-span-2 space-y-6">
             <Card className="border-border shadow-sm bg-card">
               <CardHeader className="pb-3 border-b border-border bg-muted/10">
                 <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -563,6 +591,8 @@ function PrintWorkspaceContent() {
             <AICorrectionBox 
               onSubmit={handleAICorrection} 
               isLoading={isAILoading}
+              excelColumns={parsedColumns}
+              history={activeSetup?.correctionHistory}
             />
           </div>
 

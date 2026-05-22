@@ -1,4 +1,5 @@
 import React from "react";
+import { Barcode, generateCode128SvgString, generateCode39SvgString, getBarcodeValue } from "@/lib/barcode";
 
 interface MockDeliveryNotePreviewProps {
   scale?: number;
@@ -7,6 +8,7 @@ interface MockDeliveryNotePreviewProps {
     customer?: string;
     packageName?: string;
     deliveryNoteMode?: string;
+    barcodeContent?: string;
   };
   rows?: any[];
   layoutImage?: string;
@@ -21,8 +23,14 @@ export function MockDeliveryNotePreview({
   layoutImage,
   layoutMappings,
 }: MockDeliveryNotePreviewProps) {
-  const customer = data?.customer || "Tesla Motors";
+  const customer = data?.customer || "PREVIEW";
   const mode = data?.deliveryNoteMode || "By Delivery No.";
+  const rawBarcodeType = data?.barcodeContent || "Code128";
+  const barcodeType = /39|3-9/i.test(rawBarcodeType)
+    ? "Code39"
+    : /qr|q-r/i.test(rawBarcodeType)
+      ? "QR Code"
+      : "Code128";
 
   const firstRow = rows && rows.length > 0 ? rows[0] : null;
   
@@ -32,22 +40,22 @@ export function MockDeliveryNotePreview({
     return key ? String(firstRow[key] || "").trim() : fallback;
   };
 
-  const poNumber = getFieldValue(/po|purchase\s*order|order\s*no|po\s*no/i, "PO-88319-A");
-  const docNo = getFieldValue(/delivery\s*no|dn|invoice|manifest|doc/i, "DN-2026-08912");
-  const carrier = getFieldValue(/carrier|shipper|logistics/i, "DHL Freight");
-  const date = getFieldValue(/date/i, "2026-05-21");
-  const weight = getFieldValue(/weight/i, "1,420 kg");
-  const pallets = getFieldValue(/pallet/i, "4 Units");
+  const poNumber = getFieldValue(/po|purchase\s*order|order\s*no|po\s*no|采购|合同|订单/i, "PO-88319-A");
+  const docNo = getFieldValue(/delivery\s*no|dn|invoice|manifest|doc|交货|送货|发货|单号/i, "DN-2026-08912");
+  const carrier = getFieldValue(/carrier|shipper|logistics|承运|货运|物流|快递/i, "DHL Freight");
+  const date = getFieldValue(/date|日期/i, "2026-05-21");
+  const weight = getFieldValue(/weight|重量/i, "1,420 kg");
+  const pallets = getFieldValue(/pallet|托盘/i, "4 Units");
 
   // Find column keys for part, desc, qty, uom
   const keys = firstRow ? Object.keys(firstRow) : [];
-  const partKey = keys.find(k => /part|item\s*code|sku|material|no|code/i.test(k) && !/po|order/i.test(k)) || keys[0] || "";
-  const descKey = keys.find(k => /desc|name|title|product/i.test(k)) || keys[1] || "";
-  const qtyKey = keys.find(k => /qty|quantity|pcs|pieces|count/i.test(k)) || keys[2] || "";
-  const uomKey = keys.find(k => /uom|unit/i.test(k)) || "";
+  const partKey = keys.find(k => /part|item\s*code|sku|material|no|code|物料|商品|编码/i.test(k) && !/po|order/i.test(k)) || keys[0] || "";
+  const descKey = keys.find(k => /desc|name|title|product|品名|名称|规格|描述/i.test(k)) || keys[1] || "";
+  const qtyKey = keys.find(k => /qty|quantity|pcs|pieces|count|数量|件数/i.test(k)) || keys[2] || "";
+  const uomKey = keys.find(k => /uom|unit|单位/i.test(k)) || "";
 
   const itemsToRender = rows && rows.length > 0 
-    ? rows.slice(0, 4) 
+    ? rows 
     : [
         { part: "PART-9921-A1", desc: "Model 3 Rear Axle Mount Bushing", qty: "1,200", uom: "PCS" },
         { part: "PART-0043-B2", desc: "Model Y Side Pillar Reinforcement Plate", qty: "800", uom: "PCS" },
@@ -65,6 +73,39 @@ export function MockDeliveryNotePreview({
 
       if (layoutMappings.rowTemplate) {
         let rowTemp = layoutMappings.rowTemplate;
+
+        // 1. Process barcode placeholders first to prevent literal column substitutions
+        // ColumnName specific barcodes: {{Barcode:ColumnName}} or {{条码:ColumnName}}
+        const barcodeColRegex = /\{\{\s*(Barcode|条码)\s*:\s*([^}]+)\s*\}\}/gi;
+        rowTemp = rowTemp.replace(barcodeColRegex, (match: string, type: string, columnName: string) => {
+          const col = columnName.trim();
+          const valKey = Object.keys(item).find(k => k.toLowerCase() === col.toLowerCase()) || col;
+          const val = String(item[valKey] ?? "").trim();
+          if (!val) return "";
+          const svg = barcodeType === "Code39"
+            ? generateCode39SvgString(val, { height: 18, factor: 1.2, background: "transparent" })
+            : generateCode128SvgString(val, { height: 18, factor: 1.2, background: "transparent" });
+          return `
+            <div style="width: 100%; max-width: 100px; height: 18px; display: flex; flex-direction: column; align-items: stretch; justify-content: center; box-sizing: border-box; overflow: hidden; margin: 0 auto;">
+              ${svg}
+            </div>
+          `;
+        });
+
+        // Simple row barcode: {{Barcode}} or {{条码}}
+        const simpleBarcodeRegex = /\{\{\s*(Barcode|条码)\s*\}\}/gi;
+        rowTemp = rowTemp.replace(simpleBarcodeRegex, (match: string) => {
+          const barcodeValue = getBarcodeValue(item, rawBarcodeType, part);
+          if (!barcodeValue) return "";
+          const svg = barcodeType === "Code39"
+            ? generateCode39SvgString(barcodeValue, { height: 18, factor: 1.2, background: "transparent" })
+            : generateCode128SvgString(barcodeValue, { height: 18, factor: 1.2, background: "transparent" });
+          return `
+            <div style="width: 100%; max-width: 100px; height: 18px; display: flex; flex-direction: column; align-items: stretch; justify-content: center; box-sizing: border-box; overflow: hidden; margin: 0 auto;">
+              ${svg}
+            </div>
+          `;
+        });
 
         // Replace dynamic Excel columns from the item object
         Object.keys(item).forEach((colName) => {
@@ -96,19 +137,42 @@ export function MockDeliveryNotePreview({
       }
     });
 
-    // Generate Barcode HTML
-    const barcodeHtml = `
-      <div style="width: 192px; height: 32px; background-color: #18181b; display: flex; flex-direction: column; align-items: stretch; justify-content: center; padding: 2px; border-radius: 4px; box-sizing: border-box; overflow: hidden; margin: 0 auto;">
-        <div style="height: 100%; background-color: white; display: flex; align-items: center; justify-content: space-around;">
-          ${Array.from({ length: 42 }).map((_, i) => `
-            <div style="height: 100%; background-color: black; width: ${(i % 3 === 0 ? 3 : i % 2 === 0 ? 1 : 2)}px;"></div>
-          `).join('')}
-        </div>
-      </div>
-    `;
-
     // Replace placeholders in htmlTemplate
     let renderedHtml = layoutMappings.htmlTemplate;
+
+    // 1. Process barcode placeholders first to prevent literal column substitutions
+    if (firstRow) {
+      // ColumnName specific barcodes: {{Barcode:ColumnName}} or {{条码:ColumnName}}
+      const barcodeColRegex = /\{\{\s*(Barcode|条码)\s*:\s*([^}]+)\s*\}\}/gi;
+      renderedHtml = renderedHtml.replace(barcodeColRegex, (match: string, type: string, columnName: string) => {
+        const col = columnName.trim();
+        const valKey = Object.keys(firstRow).find(k => k.toLowerCase() === col.toLowerCase()) || col;
+        const val = String(firstRow[valKey] ?? "").trim();
+        if (!val) return "";
+        const svg = barcodeType === "Code39"
+          ? generateCode39SvgString(val, { height: 24, factor: 1.2, background: "white" })
+          : generateCode128SvgString(val, { height: 24, factor: 1.2, background: "white" });
+        return `
+          <div style="width: 100%; max-width: 110px; min-width: 50px; height: 24px; display: flex; flex-direction: column; align-items: stretch; justify-content: center; box-sizing: border-box; overflow: hidden; margin: 0 auto;">
+            ${svg}
+          </div>
+        `;
+      });
+    }
+
+    // Simple sheet-level barcode: {{Barcode}} or {{条码}}
+    const simpleBarcodeRegex = /\{\{\s*(Barcode|条码)\s*\}\}/gi;
+    renderedHtml = renderedHtml.replace(simpleBarcodeRegex, (match: string) => {
+      const barcodeValue = getBarcodeValue(firstRow, rawBarcodeType, docNo);
+      const svg = barcodeType === "Code39"
+        ? generateCode39SvgString(barcodeValue, { height: 24, factor: 1.2, background: "white" })
+        : generateCode128SvgString(barcodeValue, { height: 24, factor: 1.2, background: "white" });
+      return `
+        <div style="width: 100%; max-width: 110px; min-width: 50px; height: 24px; display: flex; flex-direction: column; align-items: stretch; justify-content: center; box-sizing: border-box; overflow: hidden; margin: 0 auto;">
+          ${svg}
+        </div>
+      `;
+    });
 
     // Replace dynamic Excel columns in the htmlTemplate from the first item row if available
     if (firstRow) {
@@ -122,7 +186,6 @@ export function MockDeliveryNotePreview({
     renderedHtml = renderedHtml
       .replace(/\{\{TableRows\}\}/gi, tableRowsHtml)
       .replace(/\{\{Items\}\}/gi, tableRowsHtml)
-      .replace(/\{\{Barcode\}\}/gi, barcodeHtml)
       .replace(/\{\{Customer\}\}/gi, customer)
       .replace(/\{\{Customer Name\}\}/gi, customer)
       .replace(/\{\{DocNo\}\}/gi, docNo)
@@ -141,14 +204,18 @@ export function MockDeliveryNotePreview({
       <div className="min-w-full w-fit flex justify-center py-4 bg-muted/20  rounded-xl">
         <div
           id="print-dn-content"
-          className="bg-white text-zinc-900 rounded-lg shadow-sm font-sans relative"
+          className="bg-white text-zinc-900 rounded-lg shadow-sm relative"
           style={{
-            width: isLandscape ? "820px" : "595px",
-            height: isLandscape ? "595px" : "820px",
+            width: isLandscape ? "1123px" : "794px",
+            height: isLandscape ? "794px" : "1123px",
             ...transformStyle,
             padding: 0,
             boxSizing: "border-box",
-            overflow: "hidden"
+            overflow: "hidden",
+            fontSize: "11px",
+            lineHeight: "1.4",
+            fontFamily: "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+            color: "#18181b"
           }}
           dangerouslySetInnerHTML={{ __html: renderedHtml }}
         />
@@ -167,8 +234,8 @@ export function MockDeliveryNotePreview({
         id="print-dn-content"
         className="bg-white text-zinc-900 rounded-lg shadow-sm font-sans relative"
         style={{
-          width: isLandscape ? "820px" : "595px",
-          minHeight: isLandscape ? "595px" : "820px",
+          width: isLandscape ? "1123px" : "794px",
+          minHeight: isLandscape ? "794px" : "1123px",
           ...transformStyle,
           padding: isLandscape ? "28px" : "36px",
           fontSize: "12px",
@@ -261,19 +328,23 @@ export function MockDeliveryNotePreview({
         {/* Footer message / barcodes */}
         <div className="absolute bottom-10 left-9 right-9 pt-6 border-t border-zinc-200 text-center">
           <div className="flex flex-col items-center gap-1">
-            {/* Mock delivery note barcode */}
-            <div className="w-48 h-8 bg-zinc-950 flex flex-col items-stretch justify-center p-0.5 rounded overflow-hidden">
-              <div className="h-full bg-white flex items-center justify-around">
-                {Array.from({ length: 42 }).map((_, i) => (
-                  <div 
-                    key={i} 
-                    className="h-full bg-black" 
-                    style={{ width: `${(i % 3 === 0 ? 3 : i % 2 === 0 ? 1 : 2)}px` }} 
+            {/* Dynamic delivery note barcode */}
+            {(() => {
+              const sheetBarcodeValue = getBarcodeValue(firstRow, rawBarcodeType, docNo);
+              return (
+                <>
+                  <Barcode 
+                    value={sheetBarcodeValue} 
+                    height={32} 
+                    factor={1.5} 
+                    responsive={false} 
+                    className="w-auto h-8 border border-zinc-200 rounded overflow-hidden" 
+                    format={barcodeType}
                   />
-                ))}
-              </div>
-            </div>
-            <span className="text-[9px] text-zinc-500 font-mono">*{docNo}*</span>
+                  <span className="text-[9px] text-zinc-500 font-mono">*{sheetBarcodeValue}*</span>
+                </>
+              );
+            })()}
           </div>
           <p className="text-[10px] text-zinc-400 mt-4 font-medium">
             Generated automatically by PrintForm AI Engine. Certified template locked.

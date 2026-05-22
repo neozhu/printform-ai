@@ -1,5 +1,11 @@
 export type TemplateStatus = "draft" | "locked" | "archived";
 
+export interface CorrectionHistoryItem {
+  prompt: string;
+  timestamp: string;
+  explanation?: string;
+}
+
 export interface RecommendedSetup {
   deliveryNoteMode: string;
   headerFields: string[];
@@ -10,6 +16,7 @@ export interface RecommendedSetup {
   customHeight?: number;
   layoutImage?: string;
   layoutMappings?: any;
+  correctionHistory?: CorrectionHistoryItem[];
 }
 
 export interface TemplatePackage {

@@ -159,8 +159,11 @@ export async function lockTemplatePackage(id: string): Promise<TemplatePackage> 
     // If it was already locked, keep version or bump minor (for simple mock version management)
     const currentVerNum = parseFloat(current.version.replace("v", ""));
     nextVersion = `v${(currentVerNum + 0.1).toFixed(1)}`;
+  } else if (current.version && current.version.endsWith("-draft")) {
+    // Transitioning from draft to locked, strip the "-draft" suffix
+    nextVersion = current.version.replace("-draft", "");
   } else {
-    // Transitioning from draft/other to locked, default to v1.0
+    // Transitioning from other to locked, default to v1.0
     nextVersion = "v1.0";
   }
 
@@ -289,7 +292,10 @@ export async function cloneTemplatePackageAsDraft(id: string): Promise<TemplateP
   if (!existing) throw new Error("Template package not found");
   
   const supabase = createSupabaseServerClient();
-  const nextVer = `${existing.version}-draft`;
+  const cleanVer = existing.version.replace("v", "").replace("-draft", "");
+  const currentVerNum = parseFloat(cleanVer);
+  const nextVerNum = isNaN(currentVerNum) ? 1.0 : currentVerNum + 0.1;
+  const nextVer = `v${nextVerNum.toFixed(1)}-draft`;
   
   const { data: inserted, error } = await supabase
     .from("template_packages")

@@ -6,8 +6,6 @@ import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
 import { UploadDropzone } from "@/components/upload-dropzone";
 import { PreviewTabs } from "@/components/preview-tabs";
-import { AIRuleCard } from "@/components/ai-rule-card";
-import { QuickFixPanel } from "@/components/quick-fix-panel";
 import { AICorrectionBox } from "@/components/ai-correction-box";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,6 +74,9 @@ function SetupStudioContent() {
             headerFields: newFields.length > 0 ? newFields : prev.headerFields,
           };
         });
+        if (data.packageName) {
+          setPackageName(data.packageName);
+        }
         if (outputs.includes("Custom Size")) {
           setIsLabelUploaded(true);
         } else {
@@ -123,13 +124,6 @@ function SetupStudioContent() {
     setOutputs([type]);
   };
 
-  const handleSelectFix = (category: string, value: string) => {
-    setSetup((prev) => ({
-      ...prev,
-      [category]: value,
-    }));
-  };
-
   const handleAICorrection = async (message: string) => {
     setIsAILoading(true);
     try {
@@ -145,7 +139,25 @@ function SetupStudioContent() {
       });
       if (res.ok) {
         const data = await res.json();
-        setSetup(data.recommendedSetup);
+        const nextSetup = {
+          ...setup,
+          ...data.recommendedSetup,
+          correctionHistory: [
+            ...(setup.correctionHistory || []),
+            {
+              prompt: message,
+              timestamp: new Date().toISOString(),
+              explanation: data.explanation,
+            }
+          ]
+        };
+        setSetup(nextSetup);
+
+        if (draftIdParam) {
+          await updateTemplatePackage(draftIdParam, {
+            recommendedSetup: nextSetup,
+          });
+        }
       }
     } catch (err) {
       console.error("Studio AI correction failed:", err);
@@ -229,7 +241,7 @@ function SetupStudioContent() {
   };
 
   return (
-    <AppShell>
+    <AppShell fullWidth>
       <PageHeader 
         title="Template Setup Studio" 
         description="Set up and configure parsing rules with instant AI copilot suggestions."
@@ -243,7 +255,7 @@ function SetupStudioContent() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* Left Column: Input Forms & Document Dropzones */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className="lg:col-span-2 space-y-6">
           <Card className="border-border shadow-sm">
             <CardHeader className="pb-3 border-b border-border bg-muted/10">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -379,10 +391,10 @@ function SetupStudioContent() {
         </div>
 
         {/* Center Column: Live preview tab */}
-        <div className="lg:col-span-6">
+        <div className="lg:col-span-8">
           <PreviewTabs
-            customerName={customer || "Tesla Motors"}
-            packageName={packageName || "Standard Parts Labeling"}
+            customerName={customer || "PREVIEW"}
+            packageName={packageName || ""}
             deliveryNoteMode={setup.deliveryNoteMode}
             labelQuantityRule={setup.labelQuantityRule}
             barcodeContent={setup.barcodeContent}
@@ -391,16 +403,18 @@ function SetupStudioContent() {
             layoutImage={setup.layoutImage}
             layoutMappings={setup.layoutMappings}
             isAnalyzingLayout={isAnalyzingLayout}
+            isEmpty={!setup.layoutImage}
           />
         </div>
 
         {/* Right Column: AI recommends, quick corrections, and lock confirmation */}
-        <div className="lg:col-span-3 space-y-6">
-          <AIRuleCard setup={setup} />
-          
-          <QuickFixPanel onSelectFix={handleSelectFix} />
-
-          <AICorrectionBox onSubmit={handleAICorrection} isLoading={isAILoading} />
+        <div className="lg:col-span-2 space-y-6">
+          <AICorrectionBox 
+            onSubmit={handleAICorrection} 
+            isLoading={isAILoading} 
+            excelColumns={excelColumns}
+            history={setup.correctionHistory}
+          />
 
           <div className="flex flex-col gap-2">
             <Button

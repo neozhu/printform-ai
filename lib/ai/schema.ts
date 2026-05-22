@@ -12,6 +12,10 @@ export const templateCorrectionResponseSchema = z.object({
     lineRule: z.string().describe("Rule for line item grouping or creation"),
     labelQuantityRule: z.string().describe("Rule for label quantity generation (e.g., 'One label per row', 'By pallet count', 'By package count')"),
     barcodeContent: z.string().describe("Content of the barcode"),
+    layoutMappings: z.object({
+      htmlTemplate: z.string().describe("The updated full HTML template code, matching user adjustment instruction. Modify inline styles as requested (font sizes, centering, alignment, margins, padding, borders, widths, column text, colors, etc.). Must wrap everything in an outermost table element."),
+      rowTemplate: z.string().nullable().describe("The updated single row HTML template if applicable, matching user adjustment instruction."),
+    }).optional().nullable().describe("Optional layout templates updated to reflect layout, styling, padding, font size, margins, alignment, column name or width corrections"),
   }),
   command: z.object({
     type: z.enum(["update_rules", "unrecognized_request"]),
