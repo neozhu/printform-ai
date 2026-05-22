@@ -4,6 +4,22 @@ import { generateObject } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
 
+// Shared constants for print-safe typography and styling
+const PRINT_FONT_STACK = `'Segoe UI', 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif`;
+const PRINT_BASE_STYLES = [
+  "width: 100%",
+  "height: 100%",
+  "border-collapse: collapse",
+  `font-family: ${PRINT_FONT_STACK}`,
+  "font-size: 10px",
+  "line-height: 1.4",
+  "color: #18181b",
+  "background-color: white",
+  "box-sizing: border-box",
+  "-webkit-print-color-adjust: exact",
+  "print-color-adjust: exact",
+].join("; ");
+
 // Zod schema for validation and structured output
 const layoutAnalysisResponseSchema = z.object({
   packageName: z.string().describe("A suggested short package name for this template layout based on the text/document features found in the image. Keep it concise, e.g. 'Standard Parts Labeling', 'Chassis Parts Delivery Note', 'Electronics Pack Slip'").nullable(),
@@ -65,67 +81,68 @@ export async function POST(req: Request) {
         return match || fallback;
       };
 
-      const customerCol = findCol(/customer|client|buyer|company|ship\s*to/i, "Customer");
-      const poCol = findCol(/po|purchase|order|contract/i, "PO Number");
-      const dateCol = findCol(/date/i, "Date");
-      const partCol = findCol(/part|sku|material|item|code/i, "Part Code");
-      const descCol = findCol(/desc|product|item|name/i, "Description");
-      const qtyCol = findCol(/qty|quantity|count|pcs/i, "Quantity");
-      const uomCol = findCol(/uom|unit/i, "Unit");
-      const docNoCol = findCol(/delivery\s*no|dn|invoice|manifest/i, "Doc No");
-      const carrierCol = findCol(/carrier|shipper|logistics/i, "Carrier");
+      const customerCol = findCol(/customer|client|buyer|company|ship\s*to|客户/i, "Customer");
+      const poCol = findCol(/po|purchase|order|contract|订单/i, "PO Number");
+      const dateCol = findCol(/date|日期/i, "Date");
+      const partCol = findCol(/part|sku|material|item|code|物料|零件/i, "Part Code");
+      const descCol = findCol(/desc|product|item|name|描述|品名/i, "Description");
+      const qtyCol = findCol(/qty|quantity|count|pcs|数量/i, "Quantity");
+      const uomCol = findCol(/uom|unit|单位/i, "Unit");
+      const docNoCol = findCol(/delivery\s*no|dn|invoice|manifest|单号/i, "Doc No");
+      const carrierCol = findCol(/carrier|shipper|logistics|承运/i, "Carrier");
 
       if (isLabel) {
+        // ── Custom Size / Label Fallback Template ──
         const htmlTemplate = `
-<table style="width: 100%; height: 100%; border-collapse: collapse; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; line-height: 1.3; background-color: white; color: #18181b; box-sizing: border-box; border: 1px solid #e4e4e7; border-radius: 6px;">
+<table style="${PRINT_BASE_STYLES}; border: 1px solid #d4d4d8;">
   <tr>
-    <td style="padding: 20px; vertical-align: top;">
+    <td style="padding: 16px; vertical-align: top;">
       <!-- Label Header -->
-      <table style="width: 100%; border-collapse: collapse; border-bottom: 2px solid #18181b; margin-bottom: 10px;">
+      <table style="width: 100%; border-collapse: collapse; border-bottom: 1.5px solid #18181b; margin-bottom: 8px;">
         <tr>
-          <td style="font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; padding-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px;">
-            {{Customer}} Parts
+          <td style="font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; padding-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            {{Customer}}
           </td>
-          <td style="text-align: right; padding-bottom: 6px; font-size: 9px;">
-            <span style="background-color: #f4f4f5; padding: 2px 6px; border-radius: 4px; font-family: monospace; border: 1px solid #e4e4e7; text-transform: uppercase;">Standard Label</span>
+          <td style="text-align: right; padding-bottom: 6px; font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;">
+            LABEL
           </td>
         </tr>
       </table>
 
       <!-- Part Details -->
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
         <tr>
           <td style="padding-bottom: 4px;">
-            <span style="font-size: 9px; color: #71717a; font-weight: 700; display: block; text-transform: uppercase; line-height: 1;">Part Number</span>
-            <span style="font-weight: 900; font-size: 14px; letter-spacing: 0.02em; color: #18181b; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{PartNumber}}</span>
+            <span style="font-size: 8px; color: #71717a; font-weight: 700; display: block; text-transform: uppercase; line-height: 1;">Part Number</span>
+            <span style="font-weight: 700; font-size: 12px; letter-spacing: 0.02em; color: #18181b; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{PartNumber}}</span>
           </td>
         </tr>
         <tr>
-          <td>
-            <span style="font-size: 9px; color: #71717a; font-weight: 700; display: block; text-transform: uppercase; line-height: 1;">Description</span>
-            <span style="font-weight: 700; color: #27272a; font-size: 11px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{Description}}</span>
+          <td style="padding-top: 2px;">
+            <span style="font-size: 8px; color: #71717a; font-weight: 700; display: block; text-transform: uppercase; line-height: 1;">Description</span>
+            <span style="font-weight: 600; color: #27272a; font-size: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{Description}}</span>
           </td>
         </tr>
       </table>
 
       <!-- Qty and PO -->
-      <table style="width: 100%; border-collapse: collapse; background-color: #f4f4f5; border: 1px solid #e4e4e7; border-radius: 4px; margin-bottom: 12px;">
+      <table style="width: 100%; border-collapse: collapse; background-color: #f8f8f8; border: 0.5px solid #d4d4d8; margin-bottom: 10px; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
         <tr>
-          <td style="width: 50%; padding: 6px; vertical-align: top;">
+          <td style="width: 50%; padding: 5px 6px; vertical-align: top; border-right: 0.5px solid #d4d4d8;">
             <span style="font-size: 8px; color: #71717a; font-weight: 700; display: block; text-transform: uppercase; line-height: 1;">Qty</span>
-            <span style="font-weight: 900; font-size: 12px; color: #18181b; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{Qty}}</span>
+            <span style="font-weight: 700; font-size: 12px; color: #18181b; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{Qty}}</span>
           </td>
-          <td style="width: 50%; padding: 6px; vertical-align: top;">
+          <td style="width: 50%; padding: 5px 6px; vertical-align: top;">
             <span style="font-size: 8px; color: #71717a; font-weight: 700; display: block; text-transform: uppercase; line-height: 1;">PO Number</span>
-            <span style="font-weight: 900; font-size: 12px; color: #18181b; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{PONumber}}</span>
+            <span style="font-weight: 700; font-size: 10px; color: #18181b; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; word-break: break-all;">{{PONumber}}</span>
           </td>
         </tr>
       </table>
 
       <!-- Barcode Area -->
-      <table style="width: 100%; border-collapse: collapse; border-top: 1px dashed #d4d4d8; padding-top: 10px;">
+      <table style="width: 100%; border-collapse: collapse; border-top: 1px solid #d4d4d8;">
         <tr>
-          <td style="text-align: center; padding-top: 10px;">
+          <td style="text-align: center; padding-top: 8px;">
             {{Barcode}}
           </td>
         </tr>
@@ -148,90 +165,94 @@ export async function POST(req: Request) {
           barcodeArea: { x: 10, y: 66, width: 80, height: 22 }
         };
       } else {
+        // ── A4 Delivery Note Fallback Template ──
         const htmlTemplate = `
-<table style="width: 100%; border-collapse: collapse; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; line-height: 1.4; background-color: white; color: #18181b; box-sizing: border-box;">
+<table style="${PRINT_BASE_STYLES};">
   <tr>
-    <td style="padding: 40px; vertical-align: top;">
-      <!-- Header Table -->
-      <table style="width: 100%; border-collapse: collapse; border-bottom: 2px solid #27272a; padding-bottom: 16px; margin-bottom: 24px;">
+    <td style="padding: 40px 48px; vertical-align: top;">
+      <!-- Header -->
+      <table style="width: 100%; border-collapse: collapse; border-bottom: 1.5px solid #18181b; margin-bottom: 20px;">
         <tr>
-          <td style="vertical-align: top; padding-bottom: 16px;">
-            <h1 style="font-size: 24px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Delivery Note</h1>
-            <p style="color: #71717a; font-weight: 600; font-size: 11px; margin: 4px 0 0 0;">Client: {{Customer}}</p>
+          <td style="vertical-align: bottom; padding-bottom: 12px;">
+            <span style="font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; display: block; line-height: 1;">Delivery Note</span>
+            <span style="color: #71717a; font-weight: 600; font-size: 10px; display: block; margin-top: 4px;">Client: {{Customer}}</span>
           </td>
-          <td style="vertical-align: top; text-align: right; padding-bottom: 16px;">
-            <p style="font-weight: 700; font-size: 14px; margin: 0;">Doc No: {{DocNo}}</p>
-            <p style="color: #71717a; font-size: 11px; margin: 2px 0 0 0;">Date: {{Date}}</p>
+          <td style="vertical-align: bottom; text-align: right; padding-bottom: 12px;">
+            <span style="font-weight: 700; font-size: 12px; display: block;">No. {{DocNo}}</span>
+            <span style="color: #71717a; font-size: 10px; display: block; margin-top: 2px;">Date: {{Date}}</span>
           </td>
         </tr>
       </table>
 
-      <!-- Addresses Table -->
-      <table style="width: 100%; border-collapse: collapse; border-bottom: 1px solid #e4e4e7; padding-bottom: 24px; margin-bottom: 24px;">
+      <!-- Addresses -->
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
         <tr>
-          <td style="width: 50%; vertical-align: top; padding-bottom: 24px; padding-right: 16px;">
-            <h3 style="font-weight: 700; color: #a1a1aa; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; margin: 0 0 4px 0;">From (Supplier)</h3>
-            <p style="font-weight: 700; font-size: 11px; margin: 0 0 2px 0;">PRINTFORM AI AUTO PARTS LTD</p>
-            <p style="color: #52525b; font-size: 11px; margin: 0 0 2px 0;">Industrial Park, Building 4B</p>
-            <p style="color: #52525b; font-size: 11px; margin: 0;">Shenzhen, GD, China</p>
+          <td style="width: 50%; vertical-align: top; padding-right: 16px; padding-bottom: 12px;">
+            <span style="font-size: 8px; color: #71717a; font-weight: 700; display: block; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;">From (Supplier)</span>
+            <span style="font-weight: 600; font-size: 10px; display: block; color: #18181b;">PRINTFORM AI AUTO PARTS LTD</span>
+            <span style="color: #52525b; font-size: 10px; display: block;">Industrial Park, Building 4B</span>
+            <span style="color: #52525b; font-size: 10px; display: block;">Shenzhen, GD, China</span>
           </td>
-          <td style="width: 50%; vertical-align: top; padding-bottom: 24px; padding-left: 16px;">
-            <h3 style="font-weight: 700; color: #a1a1aa; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; margin: 0 0 4px 0;">Ship To (Customer)</h3>
-            <p style="font-weight: 700; font-size: 11px; margin: 0 0 2px 0;">{{Customer}} GIGAFACTORY</p>
-            <p style="color: #52525b; font-size: 11px; margin: 0 0 2px 0;">Receiving Dock 4, Building A</p>
-            <p style="color: #52525b; font-size: 11px; margin: 0;">Austin, TX, USA</p>
+          <td style="width: 50%; vertical-align: top; padding-left: 16px; padding-bottom: 12px;">
+            <span style="font-size: 8px; color: #71717a; font-weight: 700; display: block; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;">Ship To (Customer)</span>
+            <span style="font-weight: 600; font-size: 10px; display: block; color: #18181b;">{{Customer}}</span>
+            <span style="color: #52525b; font-size: 10px; display: block;">Receiving Dock 4, Building A</span>
+            <span style="color: #52525b; font-size: 10px; display: block;">Austin, TX, USA</span>
           </td>
         </tr>
       </table>
 
-      <!-- Meta Table -->
-      <table style="width: 100%; border-collapse: collapse; background-color: #f4f4f5; border: 1px solid #e4e4e7; border-radius: 6px; margin-bottom: 24px;">
+      <!-- Metadata Row -->
+      <table style="width: 100%; border-collapse: collapse; border: 0.5px solid #d4d4d8; margin-bottom: 20px; background-color: #f8f8f8; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
         <tr>
-          <td style="width: 25%; padding: 12px; vertical-align: top;">
-            <span style="font-size: 10px; color: #71717a; font-weight: 700; display: block; text-transform: uppercase;">PO Number</span>
-            <span style="font-weight: 600; font-size: 11px; color: #27272a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">{{PONumber}}</span>
+          <td style="width: 25%; padding: 8px 10px; vertical-align: top; border-right: 0.5px solid #d4d4d8;">
+            <span style="font-size: 8px; color: #71717a; font-weight: 700; display: block; text-transform: uppercase;">PO Number</span>
+            <span style="font-weight: 600; font-size: 10px; color: #18181b; display: block; overflow-wrap: anywhere;">{{PONumber}}</span>
           </td>
-          <td style="width: 25%; padding: 12px; vertical-align: top;">
-            <span style="font-size: 10px; color: #71717a; font-weight: 700; display: block; text-transform: uppercase;">Carrier</span>
-            <span style="font-weight: 600; font-size: 11px; color: #27272a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">{{Carrier}}</span>
+          <td style="width: 25%; padding: 8px 10px; vertical-align: top; border-right: 0.5px solid #d4d4d8;">
+            <span style="font-size: 8px; color: #71717a; font-weight: 700; display: block; text-transform: uppercase;">Carrier</span>
+            <span style="font-weight: 600; font-size: 10px; color: #18181b; display: block; overflow-wrap: anywhere;">{{Carrier}}</span>
           </td>
-          <td style="width: 25%; padding: 12px; vertical-align: top;">
-            <span style="font-size: 10px; color: #71717a; font-weight: 700; display: block; text-transform: uppercase;">Weight</span>
-            <span style="font-weight: 600; font-size: 11px; color: #27272a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">1,420 kg</span>
+          <td style="width: 25%; padding: 8px 10px; vertical-align: top; border-right: 0.5px solid #d4d4d8;">
+            <span style="font-size: 8px; color: #71717a; font-weight: 700; display: block; text-transform: uppercase;">Weight</span>
+            <span style="font-weight: 600; font-size: 10px; color: #18181b; display: block;">—</span>
           </td>
-          <td style="width: 25%; padding: 12px; vertical-align: top;">
-            <span style="font-size: 10px; color: #71717a; font-weight: 700; display: block; text-transform: uppercase;">Pallets</span>
-            <span style="font-weight: 600; font-size: 11px; color: #27272a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">4 Units</span>
+          <td style="width: 25%; padding: 8px 10px; vertical-align: top;">
+            <span style="font-size: 8px; color: #71717a; font-weight: 700; display: block; text-transform: uppercase;">Pallets</span>
+            <span style="font-weight: 600; font-size: 10px; color: #18181b; display: block;">—</span>
           </td>
         </tr>
       </table>
 
       <!-- Items Table -->
-      <table style="width: 100%; text-align: left; margin-bottom: 32px; border-collapse: collapse;">
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
         <thead>
-          <tr style="border-bottom: 1px solid #27272a; font-size: 10px; font-weight: 700; color: #71717a; text-transform: uppercase;">
-            <th style="padding: 8px 0; text-align: left; width: 10%;">Item</th>
-            <th style="padding: 8px 0; text-align: left; width: 60%;">Description</th>
-            <th style="padding: 8px 0; text-align: right; width: 15%;">Qty</th>
-            <th style="padding: 8px 0; text-align: right; width: 15%;">UOM</th>
+          <tr style="border-bottom: 1px solid #18181b;">
+            <th style="padding: 6px 4px; text-align: left; width: 8%; font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;">No.</th>
+            <th style="padding: 6px 4px; text-align: left; width: 22%; font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;">Part Number</th>
+            <th style="padding: 6px 4px; text-align: left; width: 42%; font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;">Description</th>
+            <th style="padding: 6px 4px; text-align: right; width: 14%; font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;">Qty</th>
+            <th style="padding: 6px 4px; text-align: right; width: 14%; font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;">UOM</th>
           </tr>
         </thead>
-        <tbody style="border-bottom: 1px solid #e4e4e7;">
+        <tbody>
           {{TableRows}}
         </tbody>
-      </table>
+        <tbody>
+          {{EmptyRows}}
+        </tbody>
 
-      <!-- Footer Table -->
-      <table style="width: 100%; border-collapse: collapse; border-top: 1px solid #e4e4e7; margin-top: 24px; padding-top: 24px; text-align: center;">
+      <!-- Footer / Barcode -->
+      <table style="width: 100%; border-collapse: collapse; border-top: 1px solid #18181b;">
         <tr>
-          <td style="padding-top: 24px; text-align: center;">
-            <div style="display: inline-block; text-align: center;">
-              {{Barcode}}
-              <span style="font-size: 9px; color: #71717a; font-family: monospace; display: block; margin-top: 4px;">*{{DocNo}}*</span>
-            </div>
-            <p style="font-size: 10px; color: #a1a1aa; margin: 16px 0 0 0; font-weight: 500;">
-              Generated automatically by PrintForm AI Engine. Certified template locked.
-            </p>
+          <td style="padding-top: 16px; text-align: center;">
+            {{Barcode}}
+            <span style="font-size: 8px; color: #71717a; font-family: monospace; display: block; margin-top: 3px; letter-spacing: 0.05em;">*{{DocNo}}*</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding-top: 12px; text-align: center;">
+            <span style="font-size: 8px; color: #a1a1aa; font-weight: 500;">Generated by PrintForm AI Engine</span>
           </td>
         </tr>
       </table>
@@ -241,14 +262,12 @@ export async function POST(req: Request) {
         `.trim();
 
         const rowTemplate = `
-<tr style="border-bottom: 1px solid #e4e4e7;">
-  <td style="padding: 10px 0; font-weight: 700; font-size: 11px; text-align: left; vertical-align: middle;">{{Index}}</td>
-  <td style="padding: 10px 0; vertical-align: middle;">
-    <span style="font-weight: 700; font-size: 11px; display: block; color: #27272a;">{{part}}</span>
-    <span style="color: #71717a; font-size: 10px; display: block;">{{desc}}</span>
-  </td>
-  <td style="padding: 10px 0; text-align: right; font-weight: 600; font-size: 11px; vertical-align: middle;">{{qty}}</td>
-  <td style="padding: 10px 0; text-align: right; font-size: 11px; color: #71717a; vertical-align: middle;">{{uom}}</td>
+<tr style="border-bottom: 0.5px solid #d4d4d8; page-break-inside: avoid;">
+  <td style="padding: 6px 4px; font-weight: 600; font-size: 10px; text-align: left; vertical-align: top; width: 8%;">{{Index}}</td>
+  <td style="padding: 6px 4px; font-size: 10px; font-weight: 600; text-align: left; vertical-align: top; width: 22%; overflow-wrap: anywhere; word-break: break-all;">{{part}}</td>
+  <td style="padding: 6px 4px; font-size: 10px; text-align: left; vertical-align: top; width: 42%; color: #27272a;">{{desc}}</td>
+  <td style="padding: 6px 4px; font-size: 10px; font-weight: 600; text-align: right; vertical-align: top; width: 14%;">{{qty}}</td>
+  <td style="padding: 6px 4px; font-size: 10px; text-align: right; vertical-align: top; width: 14%; color: #52525b;">{{uom}}</td>
 </tr>
         `.trim();
 
@@ -312,84 +331,7 @@ export async function POST(req: Request) {
           try {
             console.log(`Analyzing template layout image with OpenAI model: ${modelName}`);
             
-            const promptText = `
-You are an AI specialized in converting document layout images into high-fidelity, clean HTML/CSS templates.
-We need to analyze an uploaded template image and generate:
-1. A suggested short package name for this template layout based on the text/document features found in the image. Keep it concise, e.g. 'Standard Parts Labeling', 'Chassis Parts Delivery Note', 'Electronics Pack Slip' and set it in the root-level 'packageName' field.
-2. A complete, self-contained HTML/CSS structure (using inline style attributes) that visually matches the document layout in the image.
-3. A single row HTML template for the items table (if applicable).
-4. The coordinate-based mappings for backwards compatibility.
-
-Inputs:
-- Output Size/Type: ${outputType} (can be "A4 Portrait", "A4 Landscape", "Custom Size")
-- Available Excel columns from user upload: ${JSON.stringify(columns)}
-
-Instructions for generating the HTML/CSS Template:
-1. Target Document Dimensions & Print Safety Margins (at 96 DPI):
-   - For "A4 Portrait": The template should fit exactly inside a container of width 794px and height 1123px.
-     - You MUST wrap the entire template in an outermost \`<table>\` element.
-     - The outermost \`<td>\` cell wrapper MUST have \`padding: 40px 48px;\` (approximately 10mm-15mm) to act as a print-safe margin, ensuring physical printers do not clip text/borders and the layout has comfortable breathing room.
-     - Use \`box-sizing: border-box;\` and ensure no content overflows.
-   - For "A4 Landscape": The template should fit exactly inside a container of width 1123px and height 794px.
-     - The outermost wrapper cell MUST have \`padding: 40px 48px;\` for print margin safety.
-   - For "Custom Size": The template should fit exactly inside a container of width 300px and height 300px.
-     - The outermost wrapper cell MUST have a small padding of \`15px\` to \`20px;\`.
-2. Unified Table-based Layout Standard:
-   - You MUST structure the overall document layout using HTML \`<table>\` elements (using nested \`<table>\`, \`<tr>\`, \`<td>\`, and \`<th>\` tags).
-   - Position and align all fields, header sections, address blocks, metadata key-value pairs, tables, and barcode elements exclusively inside table cells (\`<td>\`/\`<th>\`).
-   - Use table-specific attributes and styles like \`colspan\`, \`rowspan\`, \`width\`, \`height\`, \`text-align\`, \`vertical-align\`, and cell \`padding\` to control positions, dimensions, and gaps.
-   - NEVER use CSS absolute or relative positioning (\`position: absolute;\`, \`position: relative;\`, \`left\`, \`top\`, \`right\`, \`bottom\`) to layout or place any elements. Everything must flow naturally within the table rows and cells.
-   - Do NOT use specific \`x-y\` coordinates, fixed widths/heights, or translate styling on blocks to control positioning.
-3. Typography Standardization & Spacing (Preventing Bloat/Crowding):
-   - **Base Style on Outermost Table**: The outermost \`<table>\` element MUST have base typography styles applied explicitly:
-     \`style="width: 100%; height: 100%; border-collapse: collapse; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; line-height: 1.4; color: #18181b; background-color: white; box-sizing: border-box;"\`
-   - **Explicit Font Sizes on All Elements**: Every text element in the template must either inherit from the 11px base, or have an explicit font-size style. Maintain a neat, clean, and uniform 4-level typography scale. Do NOT use random font sizes.
-     - **Document Title / Main Headers**: 20px - 24px (bold, e.g., "DELIVERY NOTE", "INVOICE")
-     - **Section Subheaders / Doc Numbers**: 12px - 14px (bold, e.g., "From", "Ship To", "Doc No:")
-     - **Main Content / Body Texts / Row Data**: 10px - 11px (normal/semibold, e.g., addresses, item values, description, part numbers, PO number value, date value, etc.)
-     - **Labels / Meta-keys / Captions / Small Notes**: 8px - 9px (bold, uppercase, muted color like \`#71717a\`, e.g., "PO NUMBER", "CARRIER", "DATE")
-    - **Breathing Room, Borders & No Crowding**:
-      - Set \`border-collapse: collapse;\` on all tables.
-      - **Borders Compliance**: Closely match the border style of the input document. If the document uses a full grid table, make sure to add explicit borders to every single table cell (\`border: 1px solid #18181b;\` or \`border: 1px solid #a1a1aa;\`). Do NOT omit cell borders or use inconsistent line colors.
-      - **Preventing Text Overlap & Overflow**: Set \`word-break: break-all;\` or \`overflow-wrap: anywhere;\` inline styles on every cell that might contain long alphanumeric strings (like SAP part numbers, PO items, WBS codes, dates, barcode tokens).
-      - **Column Width Alignment**: You MUST specify explicit inline percentage widths (e.g. \`width: 5%;\`) on every \`<th>\` in the headers and the corresponding \`<td>\` in the row template. Ensure column widths are proportional and prevent any column from collapsing to zero width.
-      - **Handling Dense/Multi-column Tables (10+ Columns)**: If the table has a large number of columns (such as 10 to 20 columns), the base typography scale MUST be scaled down. Set font-size on all cell text and header text in the table to \`8px\` or \`9px\`, and line-height to \`1.2\` to fit text without clipping or wrapping excessively.
-      - **Barcode Column Space**: Set the barcode column width to at least \`8%\` to \`12%\` to ensure that the barcode fit is readable and does not overlap adjacent columns.
-      - Ensure data cells and header cells have clean, consistent padding (e.g. \`padding: 4px;\` or \`padding: 2px 4px;\` for dense tables).
-      - Avoid squishing elements. Do not set hard/restrictive height dimensions on text blocks or rows containing text (like description or addresses) to allow them to expand naturally. Use padding and row margin/gaps to create breathing room.
-      - Add clean vertical space between tables using margin-bottom/padding on structural rows or wrapper cells (e.g. \`margin-bottom: 24px;\` or \`padding-bottom: 16px;\`).
-    - The design must look premium, harmoniously aligned, and extremely professional. Keep background colors transparent or white.
-4. Placeholder Tokens:
-   - Replace any dynamic values with double curly-brace placeholder tokens:
-     - Customer name: {{Customer}}
-     - Purchase Order/PO Number: {{PONumber}}
-     - Document Number/DN Number: {{DocNo}}
-     - Date: {{Date}}
-     - Carrier/Shipper: {{Carrier}}
-     - Barcode or QR Code placeholder: {{Barcode}}
-5. Table Rows (for A4 Portrait/Landscape):
-   - Locate the item list / line items table in the layout image.
-   - Replicate the table headers exactly. Ensure that the generated table header columns in the thead match the column headers in the image.
-   - In the table body (tbody), place a single placeholder token: {{TableRows}}
-   - You must ALSO output a separate 'rowTemplate' string containing the HTML structure of a single row (tr). Inside 'rowTemplate', the number, alignment, style, and width of cells (td) must match the headers in the thead exactly.
-   - Map each cell in the 'rowTemplate' to the corresponding available Excel column from this list: ${JSON.stringify(columns)} by using the column name as placeholder enclosed in double curly braces, e.g. {{物料号}} or {{交货数量}}.
-   - Use {{Index}} for the cell representing the item index/sequence number.
-   - For cells representing part code, description, quantity, or UOM, you may also use standard placeholders:
-     - Part Code / Part Number: {{part}}
-     - Description: {{desc}}
-     - Quantity: {{qty}}
-     - UOM / Unit: {{uom}}
-6. Label Fields (for Custom Size):
-   - A label does not have a line item table. Replicate the fields on the label (Customer, Part Number, Description, Qty, PO Number, Barcode) as a table-based layout (nested standard table cells and rows).
-   - Map the fields using the available Excel columns when possible: ${JSON.stringify(columns)}, or fallback to the placeholders: {{Customer}}, {{PartNumber}}, {{Description}}, {{Qty}}, {{PONumber}}, and {{Barcode}}.
-7. The HTML code must be clean, semantic, and validate correctly. Avoid generic placeholders - make sure the layout matches the visual design of the uploaded template.
-
-Legacy coordinate mappings instruction (still required in response):
-1. Identify the percentage coordinates (0 to 100 relative to the template container) of the dynamic fields for backwards compatibility.
-2. For A4 Portrait/Landscape, return coordinate-based headerFields, tableArea, and barcodeArea. For Custom Size, return headerFields and barcodeArea. Set names exactly as:
-   - For A4 Portrait / A4 Landscape: "Customer", "Doc No", "Date", "PO Number", "Carrier"
-   - For Custom Size (Label): "Customer", "Part Number", "Description", "Qty", "PO Number"
-`;
+            const promptText = buildAnalysisPrompt(outputType, columns);
 
             const { object } = await generateObject({
               model: openai(modelName),
@@ -431,4 +373,246 @@ Legacy coordinate mappings instruction (still required in response):
     console.error("AI Layout Analysis API error:", err);
     return NextResponse.json({ error: "Failed to analyze layout image" }, { status: 500 });
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AI Prompt Builder
+// ─────────────────────────────────────────────────────────────────────────────
+
+function buildAnalysisPrompt(outputType: string, columns: string[]): string {
+  const columnsJson = JSON.stringify(columns);
+
+  return `
+You are an expert document layout engineer specializing in converting scanned/photographed form images into pixel-perfect, print-ready HTML templates using pure table-based layouts.
+
+Your task: Analyze the uploaded template image and produce a high-fidelity HTML/CSS reproduction that is optimized for physical printing.
+
+═══════════════════════════════════════════════════════════════
+INPUTS
+═══════════════════════════════════════════════════════════════
+- Output Size/Type: ${outputType} (one of: "A4 Portrait", "A4 Landscape", "Custom Size")
+- Available Excel columns from user data: ${columnsJson}
+
+═══════════════════════════════════════════════════════════════
+OUTPUT REQUIREMENTS
+═══════════════════════════════════════════════════════════════
+You must produce:
+1. A \`packageName\` (root-level field): A concise name describing the template, e.g. "Standard Parts Labeling", "Chassis Parts Delivery Note", "Electronics Pack Slip".
+2. \`mappings.htmlTemplate\`: A complete, self-contained HTML string using ONLY inline styles that visually reproduces the uploaded document image.
+3. \`mappings.rowTemplate\`: A single \`<tr>\` HTML string for the data table row template (null for Custom Size / labels).
+4. \`mappings.headerFields\`, \`mappings.tableArea\`, \`mappings.barcodeArea\`: Legacy coordinate-based mappings (percentage 0-100 relative to container).
+
+═══════════════════════════════════════════════════════════════
+RULE 1: HIGH-FIDELITY LAYOUT REPRODUCTION (CRITICAL)
+═══════════════════════════════════════════════════════════════
+You MUST faithfully reproduce the visual layout of the uploaded image. This is the most important requirement.
+
+- **SINGLE CONTINUOUS TABLE (CRITICAL)**: The ENTIRE document — title, header fields, metadata, data table, and footer — MUST be rows within ONE single \`<table>\` element. There must be NO visual gaps or white space between sections. All rows share the same grid of borders with no interruption. This is how real printed forms look: one seamless bordered grid from top to bottom.
+- **NO MARGIN / NO PADDING between sections**: Do NOT use \`margin-bottom\`, \`margin-top\`, \`padding-bottom\`, or any spacing between sections that would create visible gaps. The border lines between adjacent rows should touch/merge seamlessly.
+- **Zone-by-zone matching**: Examine each visual zone in the image (header, addresses, metadata bar, line-item table, footer/barcode) and reproduce its exact position, size ratio, and arrangement — all as rows within the same single table.
+- **Border fidelity**: Reproduce the exact border style from the image:
+  - If the image shows a full grid table with borders on every cell, you MUST add \`border: 0.5px solid #18181b;\` (or \`#a1a1aa\` for lighter borders) on every \`<td>\` and \`<th>\`.
+  - If the image shows only horizontal rules between rows, use \`border-bottom\` only.
+  - If the image shows a thick outer border with thin inner lines, replicate that pattern.
+  - If the image shows double-line borders, use \`border: 3px double #18181b;\`.
+  - NEVER invent borders that don't exist in the image. NEVER omit borders that DO exist.
+- **Column width proportions**: Carefully observe the relative widths of each column in the image and map them to percentage widths that sum to 100%. For example, if a table has 5 columns and the first column visually occupies about 1/10 of the width, set it to \`width: 10%;\`.
+- **Row height proportions**: Do NOT set fixed pixel heights on data rows. Let content determine height naturally with padding.
+- **No invented decorations**: Do NOT add visual elements (shadows, gradients, rounded corners, colored backgrounds) that are not present in the original image.
+- **Preserve all text labels**: Every static text label visible in the image (e.g., "送货单", "DELIVERY NOTE", "物料号", "Item", "Qty") must appear in the HTML output at the same relative position.
+- **Reproduce the document title**: Match the title text, size, and position from the image exactly.
+
+═══════════════════════════════════════════════════════════════
+RULE 2: SINGLE CONTINUOUS TABLE LAYOUT (MANDATORY)
+═══════════════════════════════════════════════════════════════
+The entire HTML template MUST be ONE single \`<table>\` with all sections as rows within it.
+Use \`colspan\` to create wide sections (like the title row spanning all columns).
+Do NOT create separate/nested tables for different sections — this causes visible gaps between them.
+
+THE STRUCTURE MUST BE:
+\`\`\`
+Outermost <table> (page wrapper with padding)
+  └─ <tr><td> (single cell wrapper)
+       └─ ONE <table> (the entire form)
+            ├─ <tr> Title row (colspan=N to span full width)
+            ├─ <tr> Header label row (e.g., "Supplier Name" | "Delivery Note No.")
+            ├─ <tr> Header value row (e.g., {{Customer}} | {{DocNo}})
+            ├─ <tr> Metadata label row (e.g., "Project No." | "Contact" | "PO No." | "Purchaser")
+            ├─ <tr> Metadata value row
+            ├─ <tr> Table header row (<th> for each column)
+            ├─ <tbody> {{TableRows}} (data rows)
+            ├─ <tbody> {{EmptyRows}} (empty padding rows)
+            └─ <tr> Footer row (signature | barcode | sender info)
+\`\`\`
+
+CRITICAL RULES:
+- The form content table must have a FIXED number of columns (the maximum number of columns in the data table, e.g., 20 for a 20-column table).
+- Header/title/metadata/footer rows that have fewer visual cells MUST use \`colspan\` to merge cells so they still span the full table width.
+- ALL rows share the same column grid. Borders between rows are seamless — no gaps.
+- \`<span>\` is allowed for inline text styling within a \`<td>\`.
+
+ALLOWED:
+- \`<table>\`, \`<tr>\`, \`<td>\`, \`<th>\`, \`<tbody>\`, \`<span>\`
+- \`colspan\` and \`rowspan\` for merged cells
+- Table-cell styling: \`width\`, \`height\`, \`text-align\`, \`vertical-align\`, \`padding\`, \`border\`
+
+STRICTLY FORBIDDEN (will cause print failures):
+- \`<div>\`, \`<section>\`, \`<article>\`, \`<header>\`, \`<footer>\`, \`<main>\`, \`<nav>\`
+- \`<h1>\` through \`<h6>\`, \`<p>\`, \`<ul>\`, \`<ol>\`, \`<li>\`
+- \`display: flex\`, \`display: grid\`, \`display: inline-block\`
+- \`position: absolute\`, \`position: relative\`, \`position: fixed\`
+- \`top\`, \`left\`, \`right\`, \`bottom\`, \`transform\`, \`translate\`
+- \`float\`, \`clear\`
+- \`box-shadow\`, \`border-radius\`, \`opacity\`, \`rgba()\` colors
+- \`margin-top\`, \`margin-bottom\` on table rows or cells (causes gaps)
+- Any CSS that requires a separate \`<style>\` block
+- \`<thead>\` (browsers auto-hoist it to the top of the table, breaking layout)
+- **Nested \`<table>\` elements inside cells** — use \`colspan\` instead
+
+═══════════════════════════════════════════════════════════════
+RULE 3: PAGE SIZE & PRINT MARGINS
+═══════════════════════════════════════════════════════════════
+The outermost element MUST be a single \`<table>\` that fills the page.
+
+**A4 Portrait** (794px × 1123px at 96 DPI):
+- Outermost \`<table>\`: \`style="width: 100%; height: 100%; ..."\`
+- Single \`<tr><td>\` wrapper with \`padding: 40px 48px;\` (print-safe margin ~12mm)
+- Content area: ~698px × 1043px
+
+**A4 Landscape** (1123px × 794px at 96 DPI):
+- Same structure, same \`padding: 40px 48px;\`
+- Content area: ~1027px × 714px
+
+**Custom Size / Label** (300px × 300px):
+- Outermost wrapper \`<td>\` with \`padding: 15px;\`
+- Content area: ~270px × 270px
+
+═══════════════════════════════════════════════════════════════
+RULE 4: TYPOGRAPHY — STRICT 4-LEVEL HIERARCHY
+═══════════════════════════════════════════════════════════════
+The outermost \`<table>\` element MUST set base typography:
+\`style="width: 100%; height: 100%; border-collapse: collapse; font-family: 'Segoe UI', 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif; font-size: 10px; line-height: 1.4; color: #18181b; background-color: white; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact;"\`
+
+Every text element must use EXACTLY one of these 4 levels:
+
+| Level | Usage | Font Size | Weight | Color | Extra |
+|-------|-------|-----------|--------|-------|-------|
+| L1 — Title | Document title only ("DELIVERY NOTE", "送货单") | 18px | 700 | #18181b | text-transform: uppercase; letter-spacing: 0.04em |
+| L2 — Subtitle | Section headers, doc number labels ("No.", "From:", "Ship To") | 12px | 700 | #18181b | — |
+| L3 — Body | All data values, addresses, descriptions, row content | 10px | 400–600 | #18181b or #27272a | — |
+| L4 — Label | Meta-key labels, column headers, captions ("PO NUMBER", "DATE") | 8px | 700 | #71717a | text-transform: uppercase |
+
+RULES:
+- Do NOT use any font-size outside this scale (no 9px, 11px, 14px, 16px, 20px, 24px, etc.)
+- Title (L1) should appear ONCE in the document
+- For **Custom Size / Label** templates, scale down: L1=12px, L2=10px, L3=10px, L4=8px
+- For **dense tables with 10+ columns**, scale down table text: headers=8px, data=8px, line-height=1.2
+
+═══════════════════════════════════════════════════════════════
+RULE 5: PRINT OUTPUT OPTIMIZATION
+═══════════════════════════════════════════════════════════════
+These rules ensure the template prints with professional quality:
+
+1. **Force background printing**: Add on outermost \`<table>\` AND on any cell with background-color:
+   \`-webkit-print-color-adjust: exact; print-color-adjust: exact;\`
+
+2. **Prevent row splitting across pages**: Add on EVERY \`<tr>\` in the data table:
+   \`page-break-inside: avoid;\`
+
+3. **Fine-line borders for print**: Use \`0.5px\` borders instead of \`1px\` for inner grid lines. Printers render 0.5px as crisp hairlines. Use \`1px\` or \`1.5px\` only for major section dividers.
+
+4. **No transparency / RGBA**: Use only solid hex colors (#18181b, #71717a, #d4d4d8, #f8f8f8). Never use rgba(), hsla(), or opacity.
+
+5. **High contrast**: Minimum text color is #71717a (for labels). Body text must be #18181b or #27272a. Background tints must be very light (#f8f8f8 maximum).
+
+6. **Overflow protection**: Add \`overflow-wrap: anywhere; word-break: break-all;\` on cells that may contain long codes (part numbers, PO numbers, barcodes, SAP codes).
+
+7. **Cell padding consistency**: Use \`padding: 4px 6px;\` for normal density, \`padding: 2px 4px;\` for dense tables. Never use 0 padding.
+
+8. **NO gaps between sections**: Since the entire form is one continuous table, there must be NO \`margin-bottom\`, \`margin-top\`, or extra spacing between sections. Borders between rows should be seamless and continuous.
+
+═══════════════════════════════════════════════════════════════
+RULE 6: PLACEHOLDER TOKENS
+═══════════════════════════════════════════════════════════════
+Replace ALL dynamic values with double curly-brace placeholders:
+- Customer name → {{Customer}}
+- Purchase Order / PO Number → {{PONumber}}
+- Document Number / DN → {{DocNo}}
+- Date → {{Date}}
+- Carrier / Shipper → {{Carrier}}
+- Barcode / QR code area → {{Barcode}}
+
+For label templates (Custom Size), also use:
+- {{PartNumber}}, {{Description}}, {{Qty}}
+
+═══════════════════════════════════════════════════════════════
+RULE 7: TABLE ROWS, EMPTY ROW PADDING & EXCEL COLUMN MAPPING (A4 only)
+═══════════════════════════════════════════════════════════════
+For A4 Portrait / A4 Landscape:
+
+**In the htmlTemplate:**
+1. The data table header row is a plain \`<tr>\` row (NOT wrapped in \`<thead>\`) in the same single table as the rest of the form. Use \`<th>\` cells for column headers. **CRITICAL: Do NOT use \`<thead>\` because browsers auto-hoist \`<thead>\` to the top of the \`<table>\`, breaking the layout.**
+2. Each \`<th>\` MUST have an explicit \`width\` percentage that matches the visual column width in the image. All widths must sum to ~100%.
+3. After the header row, place data and empty row placeholders in \`<tbody>\` sections:
+   - First \`<tbody>\`: contains \`{{TableRows}}\` — this is where data rows will be inserted at runtime.
+   - Second \`<tbody>\`: contains \`{{EmptyRows}}\` — this is where empty padding rows will be inserted at runtime to fill the remaining page space.
+4. The \`{{EmptyRows}}\` placeholder is REQUIRED. It ensures that when there are fewer data rows than the form can fit, empty bordered rows fill the remaining vertical space so the form looks complete with all grid lines.
+
+**In the rowTemplate (separate field):**
+1. Output a single \`<tr>\` with the same number of \`<td>\` cells as the \`<thead>\` columns.
+2. Each \`<td>\` MUST have the same \`width\`, \`text-align\`, and \`font-size\` as its corresponding \`<th>\`.
+3. Add \`page-break-inside: avoid;\` on the \`<tr>\`.
+4. Map each cell to an Excel column using the BEST MATCHING column name from: ${columnsJson}
+   - Use the Excel column name as placeholder: e.g., \`{{物料号}}\`, \`{{交货数量}}\`, \`{{Description}}\`
+   - Also add standard fallback placeholders for common fields:
+     - Row index: {{Index}}
+     - Part code / material: {{part}}
+     - Description: {{desc}}
+     - Quantity: {{qty}}
+     - Unit / UOM: {{uom}}
+   - If an Excel column exactly matches, prefer the Excel name. For cells without a matching Excel column, use the standard placeholder.
+
+═══════════════════════════════════════════════════════════════
+RULE 8: LABEL FIELDS (Custom Size only)
+═══════════════════════════════════════════════════════════════
+For Custom Size templates:
+- There is NO line-item table. Set \`rowTemplate\` to null.
+- Reproduce the label fields (Customer, Part Number, Description, Qty, PO, Barcode) using nested tables.
+- Map fields to Excel columns when possible: ${columnsJson}
+- Fallback placeholders: {{Customer}}, {{PartNumber}}, {{Description}}, {{Qty}}, {{PONumber}}, {{Barcode}}
+
+═══════════════════════════════════════════════════════════════
+RULE 9: LEGACY COORDINATE MAPPINGS (required for backwards compatibility)
+═══════════════════════════════════════════════════════════════
+In addition to the HTML template, provide percentage-based coordinate mappings (0–100 relative to the template container):
+
+For **A4 Portrait / A4 Landscape**: Return headerFields, tableArea (with columns), and barcodeArea.
+- headerFields names: "Customer", "Doc No", "Date", "PO Number", "Carrier"
+
+For **Custom Size (Label)**: Return headerFields and barcodeArea (tableArea = null).
+- headerFields names: "Customer", "Part Number", "Description", "Qty", "PO Number"
+
+Map each field's \`col\` to the best matching Excel column from: ${columnsJson}
+
+═══════════════════════════════════════════════════════════════
+FINAL CHECKLIST (verify before responding)
+═══════════════════════════════════════════════════════════════
+□ The form is ONE SINGLE CONTINUOUS TABLE — no nested tables, no gaps between sections
+□ Header/title/metadata/footer rows use colspan to span the full table width
+□ NO margin-top, margin-bottom, or spacing between sections — borders are seamless
+□ {{EmptyRows}} placeholder is present after {{TableRows}} in a separate <tbody>
+□ HTML uses ONLY <table>, <tr>, <td>, <th>, <tbody>, <span> elements
+□ No <div>, <p>, <h1-h6>, <ul>, <ol>, <section>, <header>, <footer>, <thead>
+□ No display:flex, display:grid, position:absolute/relative/fixed
+□ No box-shadow, border-radius, opacity, rgba() colors
+□ Font sizes are exactly 18px, 12px, 10px, or 8px (no other values)
+□ All styles are inline (no <style> blocks)
+□ Outermost table has -webkit-print-color-adjust: exact; print-color-adjust: exact
+□ Data table rows have page-break-inside: avoid
+□ All <th> and <td> in data table have explicit width percentages
+□ Border style matches the uploaded image faithfully
+□ Column count and header text match the uploaded image exactly
+□ rowTemplate cell count matches thead column count
+□ overflow-wrap: anywhere on cells with potential long text
+`;
 }

@@ -183,8 +183,32 @@ export function MockDeliveryNotePreview({
       });
     }
 
+    // Generate empty padding rows to fill remaining page space
+    let emptyRowsHtml = "";
+    if (layoutMappings.rowTemplate) {
+      // Count how many columns exist by counting <td elements in the row template
+      const tdCount = (layoutMappings.rowTemplate.match(/<td[\s>]/gi) || []).length;
+      if (tdCount > 0) {
+        // Estimate max visible rows based on page orientation
+        // A4 Landscape ~794px height, header takes ~200px, footer ~80px, each row ~24-30px
+        // A4 Portrait ~1123px height, header takes ~200px, footer ~80px, each row ~24-30px
+        const maxRows = isLandscape ? 12 : 20;
+        const emptyCount = Math.max(0, maxRows - itemsToRender.length);
+        
+        // Build an empty row by stripping placeholder content from the row template
+        // Keep the <tr> and <td> structure but replace all {{...}} placeholders with a taller empty block
+        const emptyRow = layoutMappings.rowTemplate
+          .replace(/\{\{[^}]+\}\}/g, '<div style="min-height: 24px;">&nbsp;</div>');
+        
+        for (let i = 0; i < emptyCount; i++) {
+          emptyRowsHtml += emptyRow;
+        }
+      }
+    }
+
     renderedHtml = renderedHtml
       .replace(/\{\{TableRows\}\}/gi, tableRowsHtml)
+      .replace(/\{\{EmptyRows\}\}/gi, emptyRowsHtml)
       .replace(/\{\{Items\}\}/gi, tableRowsHtml)
       .replace(/\{\{Customer\}\}/gi, customer)
       .replace(/\{\{Customer Name\}\}/gi, customer)
