@@ -98,8 +98,11 @@ function SetupStudioContent() {
     headerFields: ["Customer Name", "PO Number", "Delivery Date"],
     lineRule: "Group identical rows by part code, aggregate quantites",
     labelQuantityRule: "One label per row",
-    barcodeContent: "Code128",
+    barcodeContent: "Code39",
   });
+
+  const canUploadLayout = isExcelUploaded;
+  const layoutUploadDisabledReason = "Upload and parse the sample Excel first.";
 
   // Pre-populate if editing an existing draft
   useEffect(() => {
@@ -370,6 +373,8 @@ function SetupStudioContent() {
                   <UploadDropzone
                     accept="image/*, .pdf"
                     title="Upload Target Layout"
+                    disabled={!canUploadLayout}
+                    disabledReason={layoutUploadDisabledReason}
                     onUpload={(fileName, fileDataUrl) => handleLayoutUpload(fileName, fileDataUrl)}
                   />
                 </div>
@@ -381,6 +386,8 @@ function SetupStudioContent() {
                   <UploadDropzone
                     accept="image/*, .pdf"
                     title="Upload Target Label"
+                    disabled={!canUploadLayout}
+                    disabledReason={layoutUploadDisabledReason}
                     onUpload={(fileName, fileDataUrl) => handleLayoutUpload(fileName, fileDataUrl)}
                   />
                 </div>

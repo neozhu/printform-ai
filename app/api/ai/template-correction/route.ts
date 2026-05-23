@@ -56,7 +56,7 @@ export async function POST(req: Request) {
     
     let deliveryNoteMode = currentSetup?.deliveryNoteMode || "One document";
     let labelQuantityRule = currentSetup?.labelQuantityRule || "One label per row";
-    let barcodeContent = currentSetup?.barcodeContent || "Code128";
+    let barcodeContent = currentSetup?.barcodeContent || "Code39";
     let headerFields = currentSetup?.headerFields || ["Customer", "PO Number", "Date"];
     let lineRule = currentSetup?.lineRule || "Standard row output";
 

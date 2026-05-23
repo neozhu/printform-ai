@@ -25,12 +25,14 @@ export function MockDeliveryNotePreview({
 }: MockDeliveryNotePreviewProps) {
   const customer = data?.customer || "PREVIEW";
   const mode = data?.deliveryNoteMode || "By Delivery No.";
-  const rawBarcodeType = data?.barcodeContent || "Code128";
+  const rawBarcodeType = data?.barcodeContent || "Code39";
   const barcodeType = /39|3-9/i.test(rawBarcodeType)
     ? "Code39"
     : /qr|q-r/i.test(rawBarcodeType)
       ? "QR Code"
-      : "Code128";
+      : /128/i.test(rawBarcodeType)
+        ? "Code128"
+        : "Code39";
 
   const firstRow = rows && rows.length > 0 ? rows[0] : null;
   

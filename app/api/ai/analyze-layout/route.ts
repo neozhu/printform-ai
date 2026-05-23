@@ -20,6 +20,45 @@ const PRINT_BASE_STYLES = [
   "print-color-adjust: exact",
 ].join("; ");
 
+function removeInventedA4FooterBarcode<T extends { mappings?: { htmlTemplate?: string; barcodeArea?: unknown } }>(
+  response: T,
+  isLabel: boolean
+): T {
+  if (isLabel || !response.mappings?.htmlTemplate) {
+    return response;
+  }
+
+  const emptyRowsIndex = response.mappings.htmlTemplate.search(/\{\{EmptyRows\}\}/i);
+  const barcodeIndex = response.mappings.htmlTemplate.search(/\{\{Barcode\}\}/i);
+
+  if (emptyRowsIndex >= 0 && barcodeIndex > emptyRowsIndex) {
+    response.mappings.htmlTemplate = response.mappings.htmlTemplate.replace(
+      /(\{\{EmptyRows\}\}[\s\S]*?)\{\{\s*Barcode\s*\}\}/i,
+      "$1&nbsp;"
+    );
+    response.mappings.barcodeArea = null;
+  }
+
+  return response;
+}
+
+function normalizeA4FallbackBarcode<T extends { htmlTemplate: string; barcodeArea?: unknown }>(
+  mappings: T,
+  isLabel: boolean
+): T {
+  if (isLabel) {
+    return mappings;
+  }
+
+  return {
+    ...mappings,
+    htmlTemplate: mappings.htmlTemplate
+      .replace(/\s*\{\{\s*Barcode\s*\}\}\s*/gi, "&nbsp;")
+      .replace(/\s*<span style="font-size: 8px; color: #71717a; font-family: monospace; display: block; margin-top: 3px; letter-spacing: 0.05em;">\*\{\{DocNo\}\}\*<\/span>/i, ""),
+    barcodeArea: null,
+  };
+}
+
 // Zod schema for validation and structured output
 const layoutAnalysisResponseSchema = z.object({
   packageName: z.string().describe("A suggested short package name for this template layout based on the text/document features found in the image. Keep it concise, e.g. 'Standard Parts Labeling', 'Chassis Parts Delivery Note', 'Electronics Pack Slip'").nullable(),
@@ -352,7 +391,7 @@ export async function POST(req: Request) {
             });
 
             console.log("Successfully parsed layout coordinates & HTML template via AI:", JSON.stringify(object.mappings));
-            return NextResponse.json(object);
+            return NextResponse.json(removeInventedA4FooterBarcode(object, isLabel));
           } catch (modelError: any) {
             console.warn(`Failed to generate layout mappings with model ${modelName}:`, modelError.message);
             // Continue to next model in list
@@ -367,7 +406,7 @@ export async function POST(req: Request) {
     console.log("Using deterministic fallback mappings");
     return NextResponse.json({
       packageName: outputType === "Custom Size" ? "Standard Parts Labeling" : "Standard Parts Delivery Note",
-      mappings: generateFallbackMappings()
+      mappings: normalizeA4FallbackBarcode(generateFallbackMappings(), isLabel)
     });
   } catch (err: any) {
     console.error("AI Layout Analysis API error:", err);
@@ -409,7 +448,7 @@ You MUST faithfully reproduce the visual layout of the uploaded image. This is t
 
 - **SINGLE CONTINUOUS TABLE (CRITICAL)**: The ENTIRE document — title, header fields, metadata, data table, and footer — MUST be rows within ONE single \`<table>\` element. There must be NO visual gaps or white space between sections. All rows share the same grid of borders with no interruption. This is how real printed forms look: one seamless bordered grid from top to bottom.
 - **NO MARGIN / NO PADDING between sections**: Do NOT use \`margin-bottom\`, \`margin-top\`, \`padding-bottom\`, or any spacing between sections that would create visible gaps. The border lines between adjacent rows should touch/merge seamlessly.
-- **Zone-by-zone matching**: Examine each visual zone in the image (header, addresses, metadata bar, line-item table, footer/barcode) and reproduce its exact position, size ratio, and arrangement — all as rows within the same single table.
+  - **Zone-by-zone matching**: Examine each visual zone in the image (header, addresses, metadata bar, line-item table, footer/signature area) and reproduce its exact position, size ratio, and arrangement — all as rows within the same single table.
 - **Border fidelity**: Reproduce the exact border style from the image:
   - If the image shows a full grid table with borders on every cell, you MUST add \`border: 0.5px solid #18181b;\` (or \`#a1a1aa\` for lighter borders) on every \`<td>\` and \`<th>\`.
   - If the image shows only horizontal rules between rows, use \`border-bottom\` only.
@@ -442,7 +481,7 @@ Outermost <table> (page wrapper with padding)
             ├─ <tr> Table header row (<th> for each column)
             ├─ <tbody> {{TableRows}} (data rows)
             ├─ <tbody> {{EmptyRows}} (empty padding rows)
-            └─ <tr> Footer row (signature | barcode | sender info)
+            └─ <tr> Footer row (signature / sender info / blank cells exactly as seen)
 \`\`\`
 
 CRITICAL RULES:
@@ -540,7 +579,12 @@ Replace ALL dynamic values with double curly-brace placeholders:
 - Document Number / DN → {{DocNo}}
 - Date → {{Date}}
 - Carrier / Shipper → {{Carrier}}
-- Barcode / QR code area → {{Barcode}}
+
+**Barcode rule is strict: DO NOT invent barcodes.**
+- Only output {{Barcode}} if the uploaded image visibly contains a real barcode/QR graphic, a clearly labeled barcode/QR reserved area, or a table column whose header explicitly says "Barcode" / "条码".
+- If the footer/bottom area is blank or only contains signature/sender/date text, preserve it as blank/text. Do NOT place {{Barcode}} there.
+- If the image has a barcode table column, put {{Barcode}} only inside that rowTemplate column. Do NOT also add a footer barcode.
+- If no barcode/QR appears in the uploaded image, set mappings.barcodeArea to null and do not include {{Barcode}} anywhere in htmlTemplate or rowTemplate.
 
 For label templates (Custom Size), also use:
 - {{PartNumber}}, {{Description}}, {{Qty}}
@@ -577,9 +621,9 @@ RULE 8: LABEL FIELDS (Custom Size only)
 ═══════════════════════════════════════════════════════════════
 For Custom Size templates:
 - There is NO line-item table. Set \`rowTemplate\` to null.
-- Reproduce the label fields (Customer, Part Number, Description, Qty, PO, Barcode) using nested tables.
+- Reproduce only the label fields visibly present in the uploaded image. Include Barcode only when the label image visibly has a barcode/QR or a clearly labeled barcode area.
 - Map fields to Excel columns when possible: ${columnsJson}
-- Fallback placeholders: {{Customer}}, {{PartNumber}}, {{Description}}, {{Qty}}, {{PONumber}}, {{Barcode}}
+- Fallback placeholders: {{Customer}}, {{PartNumber}}, {{Description}}, {{Qty}}, {{PONumber}}. Use {{Barcode}} only when the image explicitly shows a barcode/QR area.
 
 ═══════════════════════════════════════════════════════════════
 RULE 9: LEGACY COORDINATE MAPPINGS (required for backwards compatibility)
@@ -588,9 +632,11 @@ In addition to the HTML template, provide percentage-based coordinate mappings (
 
 For **A4 Portrait / A4 Landscape**: Return headerFields, tableArea (with columns), and barcodeArea.
 - headerFields names: "Customer", "Doc No", "Date", "PO Number", "Carrier"
+- barcodeArea MUST be null unless the uploaded image visibly contains a barcode/QR area outside the normal data table. A table column named Barcode / 条码 is represented in tableArea columns, not barcodeArea.
 
 For **Custom Size (Label)**: Return headerFields and barcodeArea (tableArea = null).
 - headerFields names: "Customer", "Part Number", "Description", "Qty", "PO Number"
+- barcodeArea MUST be null if the label image does not visibly contain a barcode/QR area.
 
 Map each field's \`col\` to the best matching Excel column from: ${columnsJson}
 
@@ -614,5 +660,7 @@ FINAL CHECKLIST (verify before responding)
 □ Column count and header text match the uploaded image exactly
 □ rowTemplate cell count matches thead column count
 □ overflow-wrap: anywhere on cells with potential long text
+□ No {{Barcode}} was added to a blank footer or blank bottom area
+□ mappings.barcodeArea is null when no visible barcode/QR area exists in the uploaded image
 `;
 }

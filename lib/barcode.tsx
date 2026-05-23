@@ -165,7 +165,7 @@ export function Barcode({
   responsive = true,
   className,
   style,
-  format = "Code128",
+  format = "Code39",
 }: {
   value: string;
   height?: number;
@@ -308,4 +308,3 @@ export function getBarcodeValue(
 
   return fallbackValue;
 }
-

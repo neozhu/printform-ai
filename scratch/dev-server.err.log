@@ -1,0 +1,50 @@
+Vercel AI SDK error, falling back to mock: Error [AI_APICallError]: Invalid schema for response_format 'response': In context=('properties', 'recommendedSetup'), 'required' is required to be supplied and to be an array including every key in properties. Missing 'layoutMappings'.
+    at async POST (app\api\ai\template-correction\route.ts:41:28)
+  39 |         }
+  40 |
+> 41 |         const { object } = await generateObject({
+     |                            ^
+  42 |           model: openai(modelName),
+  43 |           schema: templateCorrectionResponseSchema,
+  44 |           system: TEMPLATE_CORRECTION_SYSTEM_PROMPT, {
+  cause: undefined,
+  url: 'https://api.openai.com/v1/responses',
+  requestBodyValues: [Object],
+  statusCode: 400,
+  responseHeaders: [Object],
+  responseBody: '{\n' +
+    '  "error": {\n' +
+    `    "message": "Invalid schema for response_format 'response': In context=('properties', 'recommendedSetup'), 'required' is required to be supplied and to be an array including every key in properties. Missing 'layoutMappings'.",\n` +
+    '    "type": "invalid_request_error",\n' +
+    '    "param": "text.format.schema",\n' +
+    '    "code": "invalid_json_schema"\n' +
+    '  }\n' +
+    '}',
+  isRetryable: false,
+  data: [Object]
+}
+Vercel AI SDK error, falling back to mock: Error [AI_APICallError]: Invalid schema for response_format 'response': In context=('properties', 'recommendedSetup'), 'required' is required to be supplied and to be an array including every key in properties. Missing 'layoutMappings'.
+    at async POST (app\api\ai\template-correction\route.ts:41:28)
+  39 |         }
+  40 |
+> 41 |         const { object } = await generateObject({
+     |                            ^
+  42 |           model: openai(modelName),
+  43 |           schema: templateCorrectionResponseSchema,
+  44 |           system: TEMPLATE_CORRECTION_SYSTEM_PROMPT, {
+  cause: undefined,
+  url: 'https://api.openai.com/v1/responses',
+  requestBodyValues: [Object],
+  statusCode: 400,
+  responseHeaders: [Object],
+  responseBody: '{\n' +
+    '  "error": {\n' +
+    `    "message": "Invalid schema for response_format 'response': In context=('properties', 'recommendedSetup'), 'required' is required to be supplied and to be an array including every key in properties. Missing 'layoutMappings'.",\n` +
+    '    "type": "invalid_request_error",\n' +
+    '    "param": "text.format.schema",\n' +
+    '    "code": "invalid_json_schema"\n' +
+    '  }\n' +
+    '}',
+  isRetryable: false,
+  data: [Object]
+}

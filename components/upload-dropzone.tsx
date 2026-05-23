@@ -9,17 +9,21 @@ interface UploadDropzoneProps {
   accept: string;
   title: string;
   subtitle?: string;
+  disabled?: boolean;
+  disabledReason?: string;
   onUpload: (fileName: string, fileDataUrl?: string) => void;
   onExcelParsed?: (data: { sheetName: string; columns: string[]; rows: any[] }) => void;
 }
 
-export function UploadDropzone({ accept, title, subtitle, onUpload, onExcelParsed }: UploadDropzoneProps) {
+export function UploadDropzone({ accept, title, subtitle, disabled = false, disabledReason, onUpload, onExcelParsed }: UploadDropzoneProps) {
   const [isDragActive, setIsDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const processFile = (file: File) => {
+    if (disabled) return;
+
     setUploading(true);
     setUploadedFile(null);
 
@@ -114,6 +118,8 @@ export function UploadDropzone({ accept, title, subtitle, onUpload, onExcelParse
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (disabled) return;
+
     if (e.type === "dragenter" || e.type === "dragover") {
       setIsDragActive(true);
     } else if (e.type === "dragleave") {
@@ -125,6 +131,7 @@ export function UploadDropzone({ accept, title, subtitle, onUpload, onExcelParse
     e.preventDefault();
     e.stopPropagation();
     setIsDragActive(false);
+    if (disabled) return;
     
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       processFile(e.dataTransfer.files[0]);
@@ -133,12 +140,15 @@ export function UploadDropzone({ accept, title, subtitle, onUpload, onExcelParse
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
+    if (disabled) return;
+
     if (e.target.files && e.target.files[0]) {
       processFile(e.target.files[0]);
     }
   };
 
   const onButtonClick = () => {
+    if (disabled) return;
     fileInputRef.current?.click();
   };
 
@@ -151,11 +161,14 @@ export function UploadDropzone({ accept, title, subtitle, onUpload, onExcelParse
       onDragLeave={handleDrag}
       onDrop={handleDrop}
       onClick={onButtonClick}
-      className={`border border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-250 ${
-        isDragActive 
+      className={`border border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all duration-250 ${
+        disabled
+          ? "cursor-not-allowed border-border bg-muted/20 opacity-60"
+          : isDragActive 
           ? "border-foreground bg-muted/60 scale-[0.99]" 
-          : "border-border hover:border-muted-foreground/50 hover:bg-muted/30"
+          : "cursor-pointer border-border hover:border-muted-foreground/50 hover:bg-muted/30"
       }`}
+      aria-disabled={disabled}
     >
       <input
         ref={fileInputRef}
@@ -163,6 +176,7 @@ export function UploadDropzone({ accept, title, subtitle, onUpload, onExcelParse
         className="hidden"
         accept={accept}
         onChange={handleChange}
+        disabled={disabled}
       />
       
       {uploading ? (
@@ -194,8 +208,11 @@ export function UploadDropzone({ accept, title, subtitle, onUpload, onExcelParse
             {subtitle && (
               <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
             )}
+            {disabled && disabledReason && (
+              <p className="text-xs text-muted-foreground mt-1">{disabledReason}</p>
+            )}
           </div>
-          <Button variant="outline" size="sm" className="mt-2" onClick={(e) => {
+          <Button variant="outline" size="sm" className="mt-2" disabled={disabled} onClick={(e) => {
             e.stopPropagation();
             onButtonClick();
           }}>

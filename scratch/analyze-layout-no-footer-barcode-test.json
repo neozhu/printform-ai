@@ -1,0 +1,198 @@
+{
+  "packageName": "Bilingual Delivery Note",
+  "mappings": {
+    "htmlTemplate": "<table style=\"width: 100%; height: 100%; border-collapse: collapse; font-family: 'Segoe UI', 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif; font-size: 10px; line-height: 1.4; color: #18181b; background-color: white; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact;\"><tr><td style=\"padding: 40px 48px; vertical-align: top;\"><table style=\"width: 100%; border-collapse: collapse; table-layout: fixed; -webkit-print-color-adjust: exact; print-color-adjust: exact;\"><tr style=\"page-break-inside: avoid;\"><td colspan=\"18\" style=\"border: 1px solid #18181b; text-align: center; vertical-align: middle; padding: 18px 6px;\"><span style=\"font-size: 18px; font-weight: 700; color: #18181b; letter-spacing: 0.04em;\">Delivery Note/交货单（发货单）</span></td></tr><tr style=\"page-break-inside: avoid;\"><td colspan=\"12\" style=\"border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 10px 6px;\"><span style=\"font-size: 12px; font-weight: 700; color: #18181b;\">供应商名称及联系方式/Supplier Name And Contact Way:</span></td><td colspan=\"6\" style=\"border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 10px 6px;\"><span style=\"font-size: 12px; font-weight: 700; color: #18181b;\">交货单号/Delivery Note No.:</span></td></tr><tr style=\"page-break-inside: avoid;\"><td colspan=\"12\" style=\"border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 14px 6px; overflow-wrap: anywhere; word-break: break-all;\"><span style=\"font-size: 10px; font-weight: 400; color: #18181b;\">{{供应商名称}} {{供应商联系方式}}</span></td><td colspan=\"6\" style=\"border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 14px 6px; overflow-wrap: anywhere; word-break: break-all;\"><span style=\"font-size: 10px; font-weight: 400; color: #18181b;\">{{DocNo}}</span></td></tr><tr style=\"page-break-inside: avoid;\"><td colspan=\"5\" style=\"border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 10px 6px;\"><span style=\"font-size: 12px; font-weight: 700; color: #18181b;\">项目号 Project No.</span></td><td colspan=\"7\" style=\"border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 10px 6px;\"><span style=\"font-size: 12px; font-weight: 700; color: #18181b;\">收货联系人及电话:</span><span style=\"font-size: 10px; font-weight: 400; color: #18181b;\"> {{收货联系人及电话}}</span></td><td colspan=\"3\" style=\"border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 10px 6px;\"><span style=\"font-size: 12px; font-weight: 700; color: #18181b;\">SAP采购单号/SAP PO No.:</span></td><td colspan=\"3\" style=\"border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 10px 6px;\"><span style=\"font-size: 12px; font-weight: 700; color: #18181b;\">采购员/Purchaser:</span></td></tr><tr style=\"page-break-inside: avoid;\"><td colspan=\"5\" style=\"border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 14px 6px; overflow-wrap: anywhere; word-break: break-all;\"><span style=\"font-size: 10px; font-weight: 400; color: #18181b;\">{{项目号}}</span></td><td colspan=\"7\" style=\"border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 14px 6px;\"><span style=\"font-size: 10px; font-weight: 400; color: #18181b;\">&nbsp;</span></td><td colspan=\"3\" style=\"border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 14px 6px; overflow-wrap: anywhere; word-break: break-all;\"><span style=\"font-size: 10px; font-weight: 400; color: #18181b;\">{{SAP采购单号}}</span></td><td colspan=\"3\" style=\"border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 14px 6px; overflow-wrap: anywhere; word-break: break-all;\"><span style=\"font-size: 10px; font-weight: 400; color: #18181b;\">{{采购员}}</span></td></tr><tr style=\"page-break-inside: avoid;\"><th style=\"width: 2.65%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;\">序号<br>Item</span></th><th style=\"width: 4.42%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;\">采购合同序号<br>PO Item</span></th><th style=\"width: 2.21%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;\">位号<br>Item</span></th><th style=\"width: 13.27%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;\">&nbsp;</span></th><th style=\"width: 3.98%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;\">采购数量<br>PO Qty.</span></th><th style=\"width: 3.54%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;\">交货数量<br>Delivery Qty.</span></th><th style=\"width: 2.21%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;\">单位<br>Unit</span></th><th style=\"width: 2.21%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;\">托盘数</span></th><th style=\"width: 11.50%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;\">品名<br>Description</span></th><th style=\"width: 5.31%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;\">规格<br>Dimensions</span></th><th style=\"width: 3.54%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;\">WBS No.</span></th><th style=\"width: 4.42%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;\">VQS No.</span></th><th style=\"width: 7.08%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;\">Quality doc.<br>Status</span></th><th style=\"width: 5.31%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;\">生产日期<br>production date</span></th><th style=\"width: 5.31%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;\">有效期限<br>expiration date</span></th><th style=\"width: 6.19%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;\">物料号<br>SAP Part No.</span></th><th style=\"width: 3.54%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;\">材质<br>Material</span></th><th style=\"width: 4.42%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;\">交货类型<br>Delivery Flag</span></th><th style=\"width: 4.86%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;\">交货地点<br>Location</span></th><th style=\"width: 5.75%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 700; color: #71717a; text-transform: uppercase;\">备注<br>Remarks</span></th></tr><tbody>{{TableRows}}</tbody><tbody>{{EmptyRows}}</tbody><tr style=\"page-break-inside: avoid;\"><td colspan=\"5\" style=\"border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 18px 6px 22px 6px;\"><span style=\"font-size: 12px; font-weight: 700; color: #18181b;\">收货验收确认/Received Confirmation</span><br><span style=\"font-size: 12px; font-weight: 700; color: #18181b;\">日期及签字/Date &amp; Signature</span></td><td colspan=\"10\" style=\"border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 18px 6px 22px 6px;\"><span style=\"font-size: 10px; font-weight: 400; color: #18181b;\">&nbsp;</span></td><td colspan=\"5\" style=\"border: 0.5px solid #18181b; text-align: center; vertical-align: bottom; padding: 18px 6px 22px 6px;\"><span style=\"font-size: 12px; font-weight: 700; color: #18181b;\">发货/Sent By: test</span><br><span style=\"font-size: 12px; font-weight: 700; color: #18181b;\">日期/Date: {{Date}}</span></td></tr></table></td></tr></table>",
+    "rowTemplate": "<tr style=\"page-break-inside: avoid;\"><td style=\"width: 2.65%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 400; color: #18181b;\">{{Index}}</span></td><td style=\"width: 4.42%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px; overflow-wrap: anywhere; word-break: break-all;\"><span style=\"font-size: 8px; font-weight: 400; color: #18181b;\">{{采购合同序号}}</span></td><td style=\"width: 2.21%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px; overflow-wrap: anywhere; word-break: break-all;\"><span style=\"font-size: 8px; font-weight: 400; color: #18181b;\">{{位号}}</span></td><td style=\"width: 13.27%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px; overflow-wrap: anywhere; word-break: break-all;\"><span style=\"font-size: 8px; font-weight: 400; color: #18181b;\">{{供应商代码}}</span></td><td style=\"width: 3.98%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 400; color: #18181b;\">{{采购数量}}</span></td><td style=\"width: 3.54%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 400; color: #18181b;\">{{交货数量}}</span></td><td style=\"width: 2.21%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 400; color: #18181b;\">{{单位}}</span></td><td style=\"width: 2.21%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 400; color: #18181b;\">{{托盘数}}</span></td><td style=\"width: 11.50%; border: 0.5px solid #18181b; text-align: left; vertical-align: middle; padding: 2px 4px; overflow-wrap: anywhere; word-break: break-all;\"><span style=\"font-size: 8px; font-weight: 400; color: #18181b;\">{{品名}}{{desc}}</span></td><td style=\"width: 5.31%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px; overflow-wrap: anywhere; word-break: break-all;\"><span style=\"font-size: 8px; font-weight: 400; color: #18181b;\">{{规格}}</span></td><td style=\"width: 3.54%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px; overflow-wrap: anywhere; word-break: break-all;\"><span style=\"font-size: 8px; font-weight: 400; color: #18181b;\">{{WBS编号}}</span></td><td style=\"width: 4.42%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px; overflow-wrap: anywhere; word-break: break-all;\"><span style=\"font-size: 8px; font-weight: 400; color: #18181b;\">{{VQS编号}}</span></td><td style=\"width: 7.08%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px; overflow-wrap: anywhere; word-break: break-all;\"><span style=\"font-size: 8px; font-weight: 400; color: #18181b;\">{{质量文件状态}}</span></td><td style=\"width: 5.31%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 400; color: #18181b;\">{{生产日期}}</span></td><td style=\"width: 5.31%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 400; color: #18181b;\">{{有效期限}}</span></td><td style=\"width: 6.19%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px; overflow-wrap: anywhere; word-break: break-all;\"><span style=\"font-size: 8px; font-weight: 400; color: #18181b;\">{{物料号}}{{part}}</span></td><td style=\"width: 3.54%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 400; color: #18181b;\">{{材质}}</span></td><td style=\"width: 4.42%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 400; color: #18181b;\">{{交货类型}}</span></td><td style=\"width: 4.86%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px;\"><span style=\"font-size: 8px; font-weight: 400; color: #18181b;\">{{交货地点}}</span></td><td style=\"width: 5.75%; border: 0.5px solid #18181b; text-align: center; vertical-align: middle; padding: 2px 4px; overflow-wrap: anywhere; word-break: break-all;\"><span style=\"font-size: 8px; font-weight: 400; color: #18181b;\">{{备注}}</span></td></tr>",
+    "headerFields": [
+      {
+        "name": "Customer",
+        "col": "供应商名称",
+        "x": 0,
+        "y": 12,
+        "width": 66,
+        "height": 10
+      },
+      {
+        "name": "Doc No",
+        "col": "采购合同序号",
+        "x": 66,
+        "y": 12,
+        "width": 34,
+        "height": 10
+      },
+      {
+        "name": "Date",
+        "col": "交货期",
+        "x": 84,
+        "y": 93,
+        "width": 14,
+        "height": 6
+      },
+      {
+        "name": "PO Number",
+        "col": "SAP采购单号",
+        "x": 66,
+        "y": 22,
+        "width": 17,
+        "height": 10
+      },
+      {
+        "name": "Carrier",
+        "col": "采购员",
+        "x": 83,
+        "y": 22,
+        "width": 17,
+        "height": 10
+      }
+    ],
+    "tableArea": {
+      "x": 0,
+      "y": 27,
+      "width": 100,
+      "height": 63,
+      "columns": [
+        {
+          "name": "Item",
+          "headerName": "序号 Item",
+          "col": "Index",
+          "x": 0,
+          "width": 2.65
+        },
+        {
+          "name": "PO Item",
+          "headerName": "采购合同序号 PO Item",
+          "col": "采购合同序号",
+          "x": 2.65,
+          "width": 4.42
+        },
+        {
+          "name": "ItemPos",
+          "headerName": "位号 Item",
+          "col": "位号",
+          "x": 7.07,
+          "width": 2.21
+        },
+        {
+          "name": "Code",
+          "headerName": "",
+          "col": "供应商代码",
+          "x": 9.28,
+          "width": 13.27
+        },
+        {
+          "name": "PO Qty",
+          "headerName": "采购数量 PO Qty.",
+          "col": "采购数量",
+          "x": 22.55,
+          "width": 3.98
+        },
+        {
+          "name": "Delivery Qty",
+          "headerName": "交货数量 Delivery Qty.",
+          "col": "交货数量",
+          "x": 26.53,
+          "width": 3.54
+        },
+        {
+          "name": "Unit",
+          "headerName": "单位 Unit",
+          "col": "单位",
+          "x": 30.07,
+          "width": 2.21
+        },
+        {
+          "name": "Pallets",
+          "headerName": "托盘数",
+          "col": "托盘数",
+          "x": 32.28,
+          "width": 2.21
+        },
+        {
+          "name": "Description",
+          "headerName": "品名 Description",
+          "col": "品名",
+          "x": 34.49,
+          "width": 11.5
+        },
+        {
+          "name": "Dimensions",
+          "headerName": "规格 Dimensions",
+          "col": "规格",
+          "x": 45.99,
+          "width": 5.31
+        },
+        {
+          "name": "WBS No.",
+          "headerName": "WBS No.",
+          "col": "WBS编号",
+          "x": 51.3,
+          "width": 3.54
+        },
+        {
+          "name": "VQS No.",
+          "headerName": "VQS No.",
+          "col": "VQS编号",
+          "x": 54.84,
+          "width": 4.42
+        },
+        {
+          "name": "Quality doc. Status",
+          "headerName": "Quality doc. Status",
+          "col": "质量文件状态",
+          "x": 59.26,
+          "width": 7.08
+        },
+        {
+          "name": "production date",
+          "headerName": "生产日期 production date",
+          "col": "生产日期",
+          "x": 66.34,
+          "width": 5.31
+        },
+        {
+          "name": "expiration date",
+          "headerName": "有效期限 expiration date",
+          "col": "有效期限",
+          "x": 71.65,
+          "width": 5.31
+        },
+        {
+          "name": "SAP Part No.",
+          "headerName": "物料号 SAP Part No.",
+          "col": "物料号",
+          "x": 76.96,
+          "width": 6.19
+        },
+        {
+          "name": "Material",
+          "headerName": "材质 Material",
+          "col": "材质",
+          "x": 83.15,
+          "width": 3.54
+        },
+        {
+          "name": "Delivery Flag",
+          "headerName": "交货类型 Delivery Flag",
+          "col": "交货类型",
+          "x": 86.69,
+          "width": 4.42
+        },
+        {
+          "name": "Location",
+          "headerName": "交货地点 Location",
+          "col": "交货地点",
+          "x": 91.11,
+          "width": 4.86
+        },
+        {
+          "name": "Remarks",
+          "headerName": "备注 Remarks",
+          "col": "备注",
+          "x": 95.97,
+          "width": 5.75
+        }
+      ]
+    },
+    "barcodeArea": null
+  }
+}
