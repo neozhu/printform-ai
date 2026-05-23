@@ -4,8 +4,8 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Printer, FileEdit, History, Archive, Loader2 } from "lucide-react";
-import { cloneTemplatePackageAsDraft, archiveTemplatePackage } from "@/lib/supabase/actions";
+import { Printer, FileEdit, History, Trash2, Loader2 } from "lucide-react";
+import { cloneTemplatePackageAsDraft, deleteTemplatePackage } from "@/lib/supabase/actions";
 import { TemplatePackage } from "@/lib/mock-data";
 
 interface TemplateDetailActionsProps {
@@ -14,7 +14,7 @@ interface TemplateDetailActionsProps {
 
 export function TemplateDetailActions({ pkg }: TemplateDetailActionsProps) {
   const router = useRouter();
-  const [loadingAction, setLoadingAction] = useState<"clone" | "archive" | null>(null);
+  const [loadingAction, setLoadingAction] = useState<"clone" | "delete" | null>(null);
 
   const handleCreateNewVersion = async () => {
     setLoadingAction("clone");
@@ -29,18 +29,18 @@ export function TemplateDetailActions({ pkg }: TemplateDetailActionsProps) {
     }
   };
 
-  const handleArchive = async () => {
-    if (!confirm("Are you sure you want to archive this template? This cannot be undone.")) {
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this template? This cannot be undone.")) {
       return;
     }
-    setLoadingAction("archive");
+    setLoadingAction("delete");
     try {
-      await archiveTemplatePackage(pkg.id);
+      await deleteTemplatePackage(pkg.id);
       router.push("/templates");
       router.refresh();
     } catch (err) {
-      console.error("Failed to archive template package:", err);
-      alert("Failed to archive template.");
+      console.error("Failed to delete template package:", err);
+      alert("Failed to delete template.");
     } finally {
       setLoadingAction(null);
     }
@@ -56,14 +56,12 @@ export function TemplateDetailActions({ pkg }: TemplateDetailActionsProps) {
           </Link>
         </Button>
       ) : (
-        pkg.status !== "archived" && (
-          <Button className="w-full shadow-sm" asChild disabled={loadingAction !== null}>
-            <Link href={`/templates/new?id=${pkg.id}`} className="flex items-center justify-center gap-1.5">
-              <FileEdit className="h-4 w-4" />
-              <span>Edit Draft</span>
-            </Link>
-          </Button>
-        )
+        <Button className="w-full shadow-sm" asChild disabled={loadingAction !== null}>
+          <Link href={`/templates/new?id=${pkg.id}`} className="flex items-center justify-center gap-1.5">
+            <FileEdit className="h-4 w-4" />
+            <span>Edit Draft</span>
+          </Link>
+        </Button>
       )}
 
       {pkg.status === "locked" && (
@@ -82,21 +80,19 @@ export function TemplateDetailActions({ pkg }: TemplateDetailActionsProps) {
         </Button>
       )}
 
-      {pkg.status !== "archived" && (
-        <Button
-          variant="outline"
-          className="w-full flex items-center justify-center gap-1.5 text-destructive border-destructive/20 hover:bg-destructive/10 dark:text-red-400 dark:border-red-950/40 dark:hover:bg-red-950/20"
-          onClick={handleArchive}
-          disabled={loadingAction !== null}
-        >
-          {loadingAction === "archive" ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Archive className="h-4 w-4" />
-          )}
-          <span>Archive Template</span>
-        </Button>
-      )}
+      <Button
+        variant="outline"
+        className="w-full flex items-center justify-center gap-1.5 text-destructive border-destructive/20 hover:bg-destructive/10 dark:text-red-400 dark:border-red-950/40 dark:hover:bg-red-950/20"
+        onClick={handleDelete}
+        disabled={loadingAction !== null}
+      >
+        {loadingAction === "delete" ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Trash2 className="h-4 w-4" />
+        )}
+        <span>Delete Template</span>
+      </Button>
     </div>
   );
 }

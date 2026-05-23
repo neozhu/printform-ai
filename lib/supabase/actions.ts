@@ -2,6 +2,7 @@
 
 import { createSupabaseServerClient } from "./server";
 import { TemplatePackage, PrintSession, RecommendedSetup, TemplateStatus } from "../mock-data";
+import { revalidatePath } from "next/cache";
 
 // Helper to map DB template package row to UI model
 function mapDbToTemplatePackage(row: any): TemplatePackage {
@@ -320,8 +321,31 @@ export async function cloneTemplatePackageAsDraft(id: string): Promise<TemplateP
 }
 
 /**
- * Archive a template package by changing its status to 'archived'.
+ * Delete a template package from the database.
  */
-export async function archiveTemplatePackage(id: string): Promise<TemplatePackage> {
-  return updateTemplatePackage(id, { status: "archived" });
+export async function deleteTemplatePackage(id: string): Promise<void> {
+  const supabase = createSupabaseServerClient();
+  
+  // First, delete related print sessions to avoid foreign key constraint errors
+  const { error: sessionError } = await supabase
+    .from("print_sessions")
+    .delete()
+    .eq("template_package_id", id);
+
+  if (sessionError) {
+    console.error("Error deleting print sessions:", sessionError);
+    throw new Error(sessionError.message);
+  }
+
+  const { error } = await supabase
+    .from("template_packages")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error in deleteTemplatePackage:", error);
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/templates");
 }

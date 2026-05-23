@@ -14,8 +14,7 @@ import {
   FileEdit, 
   History, 
   FileText, 
-  Barcode, 
-  Archive,
+  Barcode,
   Lock,
   Layers,
   ChevronRight

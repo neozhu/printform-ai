@@ -1,4 +1,4 @@
-export type TemplateStatus = "draft" | "locked" | "archived";
+export type TemplateStatus = "draft" | "locked";
 
 export interface CorrectionHistoryItem {
   prompt: string;
@@ -91,24 +91,6 @@ export const mockTemplatePackages: TemplatePackage[] = [
       lineRule: "Group by line code, list serial numbers",
       labelQuantityRule: "One label per row",
       barcodeContent: "Part Number + PO Number",
-    },
-  },
-  {
-    id: "tp-4",
-    customerName: "Toyota Corp",
-    packageName: "Just-In-Time Kanban",
-    outputs: ["Custom Size"],
-    status: "archived",
-    version: "v1.1",
-    updatedAt: "2026-04-10T16:45:00Z",
-    recommendedSetup: {
-      deliveryNoteMode: "One document",
-      headerFields: ["Kanban ID", "Dock Number", "Supplier ID"],
-      lineRule: "Group by dock, aggregate quantity",
-      labelQuantityRule: "By package count",
-      barcodeContent: "Kanban Barcode",
-      customWidth: 100,
-      customHeight: 150,
     },
   },
 ];
